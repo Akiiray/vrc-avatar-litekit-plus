@@ -1,0 +1,56 @@
+name: Build VPM Package Zip
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-package-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read package metadata
+        id: package
+        shell: bash
+        run: |
+          node <<'NODE' >> "$GITHUB_OUTPUT"
+          const packageJson = require('./package.json');
+          console.log(`name=${packageJson.name}`);
+          console.log(`version=${packageJson.version}`);
+          NODE
+
+      - name: Create VPM package zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          zip -r "dist/${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.zip" \
+            package.json \
+            README.md \
+            CHANGELOG.md \
+            LICENSE.md \
+            Editor \
+            Runtime \
+            'Documentation~' \
+            docs \
+            -x 'Packages/*' '.git/*' '.github/*' '.gitignore'
+          unzip -l "dist/${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.zip"
+          if unzip -Z1 "dist/${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.zip" | grep -E '(^|/)Packages/'; then
+            echo 'Packages/ must not be included in the VPM package zip.' >&2
+            exit 1
+          fi
+
+      - name: Upload package zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}
+          path: dist/${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.zip
+
+      - name: Attach package zip to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.zip
