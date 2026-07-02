@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityTexture = UnityEngine.Texture;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Core;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Utilities;
 
@@ -19,7 +20,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
             var warnings = new List<string>();
             var renderers = GetComponents<Renderer>(avatarRoot);
             var materials = new HashSet<Material>();
-            var textures = new HashSet<Texture>();
+            var textures = new HashSet<UnityTexture>();
 
             foreach (var renderer in renderers)
             {
@@ -61,7 +62,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 GetComponents<MeshRenderer>(avatarRoot),
                 GetComponents<MeshFilter>(avatarRoot),
                 new List<Material>(materials),
-                new List<Texture>(textures),
+                new List<UnityTexture>(textures),
                 GetComponents<Animator>(avatarRoot),
                 GetComponents<ParticleSystem>(avatarRoot),
                 GetComponents<Light>(avatarRoot),
@@ -95,7 +96,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
             return new List<T>(root.GetComponentsInChildren<T>(true));
         }
 
-        private static void CollectMaterialTextures(Material material, HashSet<Texture> textures)
+        private static void CollectMaterialTextures(Material material, HashSet<UnityTexture> textures)
         {
             if (material == null || material.shader == null)
             {
