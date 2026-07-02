@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityTexture = UnityEngine.Texture;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Core;
 
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
@@ -33,7 +34,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 return results;
             }
 
-            var byTexture = new Dictionary<Texture, TextureUsageInfo>();
+            var byTexture = new Dictionary<UnityTexture, TextureUsageInfo>();
             foreach (var material in context.Materials)
             {
                 CollectMaterialTextures(material, byTexture);
@@ -49,7 +50,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
             Analyze(context);
         }
 
-        public static long EstimateTextureMemoryBytes(Texture texture)
+        public static long EstimateTextureMemoryBytes(UnityTexture texture)
         {
             if (texture == null)
             {
@@ -61,7 +62,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
             return TextureHasMipMap(texture) ? (long)(baseBytes * 1.3333333f) : baseBytes;
         }
 
-        private static void CollectMaterialTextures(Material material, Dictionary<Texture, TextureUsageInfo> byTexture)
+        private static void CollectMaterialTextures(Material material, Dictionary<UnityTexture, TextureUsageInfo> byTexture)
         {
             if (material == null || material.shader == null)
             {
@@ -94,7 +95,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
             }
         }
 
-        private static TextureUsageInfo CreateTextureInfo(Texture texture)
+        private static TextureUsageInfo CreateTextureInfo(UnityTexture texture)
         {
             var info = new TextureUsageInfo
             {
@@ -124,7 +125,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
             return info;
         }
 
-        private static bool TextureHasMipMap(Texture texture)
+        private static bool TextureHasMipMap(UnityTexture texture)
         {
             if (texture is Texture2D texture2D)
             {

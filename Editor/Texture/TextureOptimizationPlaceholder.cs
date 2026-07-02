@@ -1,4 +1,4 @@
-namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Texture
+namespace Akiiray.VRCAvatarLiteKitPlus.Editor.TextureTools
 {
     public static class TextureOptimizationPlaceholder
     {

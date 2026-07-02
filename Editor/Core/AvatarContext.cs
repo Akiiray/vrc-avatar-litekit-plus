@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityTexture = UnityEngine.Texture;
 
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
 {
@@ -18,7 +19,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
             IReadOnlyList<MeshRenderer> meshRenderers,
             IReadOnlyList<MeshFilter> meshFilters,
             IReadOnlyList<Material> materials,
-            IReadOnlyList<Texture> textures,
+            IReadOnlyList<UnityTexture> textures,
             IReadOnlyList<Animator> animators,
             IReadOnlyList<ParticleSystem> particleSystems,
             IReadOnlyList<Light> lights,
@@ -53,7 +54,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         public IReadOnlyList<MeshRenderer> MeshRenderers { get; }
         public IReadOnlyList<MeshFilter> MeshFilters { get; }
         public IReadOnlyList<Material> Materials { get; }
-        public IReadOnlyList<Texture> Textures { get; }
+        public IReadOnlyList<UnityTexture> Textures { get; }
         public IReadOnlyList<Animator> Animators { get; }
         public IReadOnlyList<ParticleSystem> ParticleSystems { get; }
         public IReadOnlyList<Light> Lights { get; }
