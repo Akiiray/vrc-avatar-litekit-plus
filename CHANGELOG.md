@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1] - 2026-07-02
+
+### Fixed
+
+- Fix package root structure for the VPM release asset.
+- Remove obsolete nested `Packages/` directory from the package layout.
+- Remove duplicate asmdef/package root issue.
+- Prevent VPM installs from restoring the old package layout by using the manually attached release asset instead of GitHub source archives.
+
 ## [0.1.0] - 2026-06-30
 
 ### Added
