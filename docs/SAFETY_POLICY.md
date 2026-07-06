@@ -1,9 +1,13 @@
-# Safety Policy
+# 安全方針
 
-- Original avatars, Prefabs, Materials, Textures, and Meshes must not be directly changed by default.
-- Dry Run is the default mode for new workflows.
-- Logs should explain what would change before anything changes.
-- Before/After reports are required for conversion or optimization features.
-- Destructive operations require explicit user confirmation and must never run silently.
-- Generated assets should be clearly named and placed in predictable output locations.
-- Reversible build-time transformations are preferred over editing source assets.
+- 元Avatar、Prefab、Material、Texture、Meshは、デフォルトで直接変更しません。
+- 新しいワークフローはDry Runを既定にします。
+- 何かを変更する前に、ログで「何が変わる予定か」を説明します。
+- 変換または最適化機能には、Before / Afterレポートを用意します。
+- 破壊的操作は明示的なユーザー確認を必須とし、無言で実行してはいけません。
+- 生成Assetは、分かりやすい名前と予測可能な出力先に配置します。
+- 元アセット編集よりも、ビルド時の可逆的な変換や生成物の利用を優先します。
+- `AssetDatabase.DeleteAsset` は原則として使いません。
+- `AssetDatabase.SaveAssets` や `ImportAsset` を使う場合は、対象が生成物であることを明確にします。
+- v0.1系では診断、一覧化、提案を中心とし、自動修正や自動変換は行いません。
+- VRChat SDK Build API、NDMF API、外部依存は、ユーザー確認なしに追加しません。

@@ -2,7 +2,7 @@
 
 このリポジトリは `VRC Avatar LiteKit Plus` の Unity / VRChat 向け VPM パッケージです。Codex や AI エージェントは、このファイルを最優先のリポジトリ内作業方針として扱ってください。
 
-## Project Overview
+## プロジェクト概要
 
 `VRC Avatar LiteKit Plus` は、VRChat アバターの軽量化、Performance Rank 診断、Quest / Android / iOS 向け変換支援を目的とした Unity Editor 拡張です。
 
@@ -25,7 +25,7 @@
 - 他ツールの実装を丸ごとコピーしないでください。
 - 特に VRCQuestTools、AvatarOptimizer、TexTransTool、lilToon、NDMF は参考情報として扱い、依存追加やコード流用はユーザー確認なしに行わないでください。
 
-## Language Policy
+## 言語方針
 
 - このリポジトリの Editor Window、HelpBox、ボタン、ラベル、警告文、ログのユーザー向け文言は、原則として日本語で作成してください。
 - ユーザー向け UI は、日本語話者が Unity 上でそのまま理解できる表現にしてください。
@@ -51,7 +51,7 @@
 - Mobile Warning
 - This feature is not implemented yet
 
-## Repository Structure Rules
+## リポジトリ構造ルール
 
 `vrc-avatar-litekit-plus` は、既存の `vrc-avatar-toolkit-plus` と同じく、リポジトリ直下を VPM / UPM package root として扱います。過去に二重 package root 問題が発生したため、package root の入れ子を特に厳しく禁止します。
 
@@ -86,7 +86,7 @@ Packages/jp.unisakistudio.vrc-avatar-litekit-plus/
 - 既存の `vrc-avatar-toolkit-plus` と構造を揃えてください。
 - package root 構造を変更する場合は、必ずユーザーに確認してください。
 
-## Package and asmdef Rules
+## Package / asmdefルール
 
 - `package.json` の `version` は、ユーザーの明示的な指示がある場合のみ更新してください。
 - asmdef 名は重複させないでください。
@@ -96,7 +96,7 @@ Packages/jp.unisakistudio.vrc-avatar-litekit-plus/
 - package root の入れ子による asmdef 重複を必ずチェックしてください。
 - Unity エラー `Assembly with name '...' already exists` が出る構造を作らないでください。
 
-## Namespace Rules
+## Namespaceルール
 
 推奨 namespace:
 
@@ -126,7 +126,7 @@ Akiiray.VRCAvatarLiteKitPlus
 using UnityTexture = UnityEngine.Texture;
 ```
 
-## Safety Policy
+## 安全方針
 
 このツールは軽量化支援ツールであるため、破壊的処理を特に厳しく扱います。
 
@@ -143,7 +143,7 @@ using UnityTexture = UnityEngine.Texture;
 - `AssetDatabase.DeleteAsset` は原則禁止。
 - `AssetDatabase.SaveAssets` や `ImportAsset` を使う場合は、対象が生成物であることを明確にする。
 
-## v0.1 Scope
+## v0.1系のスコープ
 
 v0.1 系で許可される主な内容:
 
@@ -179,7 +179,7 @@ v0.1 系で禁止する内容:
 - SDK 内部クラスに Reflection で無理にアクセスする
 - 外部依存を勝手に追加する
 
-## Dependency Policy
+## 依存関係方針
 
 - v0.1 では VRChat SDK Build API に依存しないでください。
 - v0.1 では NDMF API に直接依存しないでください。
@@ -189,7 +189,7 @@ v0.1 系で禁止する内容:
 - NDMF Pass を実装する場合は、BuildPhase、実行順、AAO / TexTransTool / MA との関係を確認してから行ってください。
 - Reflection で SDK 内部 API へアクセスする場合は、壊れやすいので必ずユーザー確認を取ってください。
 
-## Texture Optimization Notes
+## Texture最適化メモ
 
 - Texture Usage Analyzer は、v0.1 では一覧化と推定のみ行います。
 - Texture Region Pruner、Texture Repacker、Atlas Builder は将来機能です。
@@ -200,7 +200,7 @@ v0.1 系で禁止する内容:
 - 未使用 Texture を勝手に削除しないでください。
 - 「未使用候補の検出」と「削除」は別物として扱ってください。
 
-## Performance Rank Notes
+## Performance Rankメモ
 
 - LiteKit の Performance Rank は VRChat 公式閾値に基づく推定であり、SDK Builder の Validation 結果と完全一致するとは限りません。
 - UI 上にも「推定」であることを表示してください。
@@ -210,7 +210,7 @@ v0.1 系で禁止する内容:
 - 目標 Rank との差分を表示してください。
 - 「Poor 以下」ではなく「Poor 以上を目標」のように、日本語として誤解しにくい表現を使ってください。
 
-## Mobile / Quest / iOS Notes
+## Mobile / Quest / iOSメモ
 
 - v0.1 では Mobile 対応は警告・診断のみです。
 - 自動変換は実装しないでください。
@@ -221,7 +221,7 @@ v0.1 系で禁止する内容:
 - UnityPackage Export や Platform Exporter は v0.3 以降の設計対象です。
 - VPM / Release ZIP と、将来の Avatar Export ZIP を混同しないでください。
 
-## Release and VPM Policy
+## Release / VPM方針
 
 - すでに GitHub Release や VPM で公開した version の中身を差し替えないでください。
 - 公開後の修正は patch version を上げてください。
@@ -261,7 +261,7 @@ vpm-repository 更新時の注意:
 - `0.1.0` や壊れた version を最新として参照しないでください。
 - vpm-repository 変更は、ユーザーから明示されたときだけ行ってください。
 
-## Manual ZIP Policy
+## 手動ZIP方針
 
 正しい ZIP 内構造:
 
@@ -297,7 +297,7 @@ UserSettings/
 - ZIP 内に `vrc-avatar-litekit-plus/package.json` のような 1 段深い構造を作らないでください。
 - ZIP 内に `Packages/` を入れないでください。
 
-## Review Checklist
+## レビューチェックリスト
 
 ### 言語・UI
 
@@ -343,7 +343,7 @@ UserSettings/
 - [ ] VPM URL に Source code zip を使っていないか
 - [ ] Release asset ZIP を参照する方針になっているか
 
-## Pull Request Review Policy
+## Pull Requestレビュー方針
 
 Codex が PR レビューまたは変更要約を行う場合:
 
@@ -373,7 +373,7 @@ Codex が PR レビューまたは変更要約を行う場合:
 - VPM 配布する場合は patch version 更新が必要か確認してください。
 ```
 
-## Prohibited Actions
+## 禁止事項
 
 今回のリポジトリ方針として、ユーザーの明示指示なしに以下を行わないでください。
 
@@ -394,7 +394,7 @@ Codex が PR レビューまたは変更要約を行う場合:
 - `Packages/` ディレクトリの復活
 - Source code zip を VPM package URL として参照する変更
 
-## When to Ask the User
+## ユーザー確認が必要な場合
 
 以下の場合は、実装前に必ずユーザーへ確認してください。
 
