@@ -1,31 +1,31 @@
 ---
-name: Bug report
-about: Report a problem in VRC Avatar LiteKit Plus
+name: バグ報告
+about: VRC Avatar LiteKit Plusの問題を報告する
 title: "[Bug]: "
 labels: bug
 assignees: ""
 ---
 
-## Summary
+## 概要
 
-## Environment
+## 環境
 
 - Unity version:
 - Package version:
-- VRChat SDK version, if relevant:
+- VRChat SDK version（関係する場合）:
 
-## Steps to reproduce
+## 再現手順
 
 1.
 2.
 3.
 
-## Expected behavior
+## 期待した動作
 
-## Actual behavior
+## 実際の動作
 
-## Logs / screenshots
+## ログ / スクリーンショット
 
-## Safety impact
+## 安全性への影響
 
-Did this modify or risk modifying original assets?
+元Avatar、Prefab、Material、Texture、Meshなどの元アセットを変更した、または変更するリスクがありましたか？

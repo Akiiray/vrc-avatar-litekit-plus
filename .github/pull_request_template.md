@@ -4,7 +4,7 @@
 
 ## 安全確認
 
-- [ ] 元 Material / Texture / Mesh / Prefab を書き換えていない
+- [ ] 元 Material / Texture / Mesh / Prefab（元アセット）を書き換えていない
 - [ ] `AssetDatabase.DeleteAsset` を使っていない
 - [ ] 自動修正を勝手に追加していない
 - [ ] Dry Run / ログ出力方針を壊していない
@@ -50,10 +50,10 @@
 - [ ] VPM URL に Source code zip を使っていないか
 - [ ] Release asset ZIP を参照する方針になっているか
 
-## Testing
+## テスト
 
 -
 
-## 未確認事項 / Notes
+## 未確認事項 / 補足
 
 -

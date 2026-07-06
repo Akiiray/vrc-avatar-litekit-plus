@@ -1,34 +1,39 @@
-# Roadmap
+# ロードマップ
 
 ## Phase 0: Scaffold
 
-- Package metadata and Unity assembly definitions.
-- Editor window skeleton.
-- Safety policy, design notes, and issue drafts.
+- Package metadataとUnity assembly definitionの整備。
+- Editor window skeletonの追加。
+- 安全方針、設計メモ、Issue草案の整備。
+- package rootがリポジトリ直下にある構造を維持。
 
 ## Phase 1: Diagnostics
 
-- Avatar selection and `AvatarContext` enrichment.
-- Dry-run analyzer logs.
-- Material duplicate detection report.
-- Texture and UV usage reports without modifying assets.
+- Avatar選択と `AvatarContext` の拡充。
+- Dry Run analyzer logの整備。
+- Material duplicate detection report。
+- 元アセットを変更しないTexture / UV usage report。
+- Performance Rankの推定表示と、目標Rankとの差分表示。
 
 ## Phase 2: Planning
 
-- Performance Target Planner for PC / Quest / Android / iOS targets.
-- Mobile texture profile recommendations.
-- Before/After estimation reports.
+- PC / Quest / Android / iOS向けのPerformance Target Planner。
+- Mobile texture profileの推奨事項。
+- Before / After estimation report。
+- Mobile向け警告と改善提案の整理。
 
 ## Phase 3: Build-time integration
 
-- NDMF build pass prototype.
-- Generated asset replacement at build time.
-- Explicit opt-in and dry-run previews.
+- NDMF build pass prototypeの検討。
+- ビルド時の生成Asset差し替え。
+- 明示的なopt-inとDry Run preview。
+- Avatar Optimizer、TexTransTool、Modular Avatarなどとの関係整理。
 
 ## Deferred
 
-- Texture region pruning.
-- Atlas generation.
-- UV relocation.
-- Mesh merging.
-- Polygon reduction.
+- Texture region pruning。
+- Atlas generation。
+- UV relocation。
+- Mesh merging。
+- Polygon reduction。
+- Material統合やShader変換の自動実行。

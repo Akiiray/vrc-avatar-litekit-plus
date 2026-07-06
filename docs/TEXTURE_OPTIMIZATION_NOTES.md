@@ -1,17 +1,20 @@
-# Texture Optimization Notes
+# Texture最適化メモ
 
-Texture features are future work. Initial code must remain limited to analysis stubs and reports.
+Texture関連機能は将来作業です。初期コードは、分析stubとレポートに限定します。v0.1系では元Texture、元Material、元Meshを変更しません。
 
-## Candidate future features
+## 将来候補の機能
 
-- Texture Usage Analyzer: list texture references from renderers and materials.
-- UV Usage Analyzer: estimate sampled texture regions by mesh UVs.
-- Texture Waste Report: compare used UV regions with texture dimensions.
-- Texture Region Pruner: generate cropped copies only after explicit opt-in.
-- Texture Repacker / Atlas Builder: generate new textures and remapped materials without touching originals.
+- Texture Usage Analyzer: RendererとMaterialからTexture参照を一覧化します。
+- UV Usage Analyzer: Mesh UVから使用されているTexture領域を推定します。
+- Texture Waste Report: 使用UV領域とTexture寸法を比較します。
+- Texture Region Pruner: 明示的なopt-in後に、切り抜いたコピーを生成します。
+- Texture Repacker / Atlas Builder: 元Assetに触れず、新しいTextureと再マップ済みMaterialを生成します。
 
-## Risks
+## リスク
 
-- Shader-specific texture slots vary by shader.
-- UV sets and material slots can be complex.
-- Atlas generation requires careful handling of padding, mipmaps, normal maps, masks, and color spaces.
+- ShaderごとにTexture slotが異なります。
+- UV setとMaterial slotの組み合わせは複雑です。
+- Atlas generationでは、padding、mipmap、normal map、mask、color spaceの扱いに注意が必要です。
+- `material.mainTexture` だけでは、BaseMap以外のNormal、Emission、Mask、MatCap、Ramp、Shader固有Textureを見落とす可能性があります。
+- UV変更やTexture Atlas化は破壊リスクが高いため、v0.1系では実行しません。
+- 未使用Textureを勝手に削除しません。「未使用候補の検出」と「削除」は別物として扱います。

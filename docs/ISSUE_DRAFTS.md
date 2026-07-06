@@ -1,350 +1,387 @@
-# Issue Drafts
+# Issue草案
 
-## 1. Repository scaffold and package metadata
+このファイルは、今後の作業を小さくレビューしやすい単位に分けるための草案です。各Issueは、元Avatarや元Assetを変更しないDry Run中心の作業として扱います。
 
-### Summary
+## 1. Repository scaffoldとpackage metadata
 
-Prepare the next incremental work item for **Repository scaffold and package metadata** without introducing destructive avatar or asset changes.
+### 概要
 
-### Goal
+**Repository scaffold and package metadata** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+### 目的
 
-### Tasks
+VPM / UPM package rootがリポジトリ直下にある構造を確認し、最小限のpackage metadataを安全に整備する。
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+### 作業内容
 
-### Acceptance Criteria
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+### 受け入れ条件
 
-### Notes / Risks
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+### 注意点・リスク
+
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 2. Editor window skeleton
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Editor window skeleton** without introducing destructive avatar or asset changes.
+**Editor window skeleton** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+Unityメニューから開けるEditor windowの骨組みを整え、未実装機能は安全なplaceholderとして表示する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
-## 3. Avatar selection and AvatarContext
+## 3. Avatar選択とAvatarContext
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Avatar selection and AvatarContext** without introducing destructive avatar or asset changes.
+**Avatar selection and AvatarContext** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+ObjectFieldまたは現在のUnity選択からAvatar Rootを指定し、診断用のコンテキストを構築する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 4. Texture Usage Analyzer
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Texture Usage Analyzer** without introducing destructive avatar or asset changes.
+**Texture Usage Analyzer** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+RendererとMaterialからTexture参照を一覧化し、未使用候補を削除ではなくレポートとして提示する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 5. UV Usage Analyzer
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **UV Usage Analyzer** without introducing destructive avatar or asset changes.
+**UV Usage Analyzer** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+Mesh UVを確認し、Textureの使用領域を推定するためのDry Run分析を追加する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 6. Texture Waste Report
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Texture Waste Report** without introducing destructive avatar or asset changes.
+**Texture Waste Report** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+Texture寸法と推定使用領域を比較し、無駄が大きい可能性をレポートする。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 7. Material Duplicate Finder
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Material Duplicate Finder** without introducing destructive avatar or asset changes.
+**Material Duplicate Finder** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+類似または重複している可能性のあるMaterialを検出し、統合は行わず候補として提示する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 8. Performance Target Planner
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Performance Target Planner** without introducing destructive avatar or asset changes.
+**Performance Target Planner** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+PC / Mobileの目標Performance Rankに対して、どのMetricが差分になっているかを表示する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 9. Mobile Texture Profile
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Mobile Texture Profile** without introducing destructive avatar or asset changes.
+**Mobile Texture Profile** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+Quest / Android / iOS向けのTexture sizeやMemoryに関する推奨事項をDry Runで提示する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 10. NDMF Build Pass placeholder
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **NDMF Build Pass placeholder** without introducing destructive avatar or asset changes.
+**NDMF Build Pass placeholder** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+NDMF連携の将来設計用placeholderを追加し、v0.1系では直接依存や本実装を行わない。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 11. Safety / Dry Run logging system
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Safety / Dry Run logging system** without introducing destructive avatar or asset changes.
+**Safety / Dry Run logging system** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+変更予定、未実装、Dry Run結果を日本語ログとレポートで分かりやすく表示する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
 
 ## 12. Documentation cleanup
 
-### Summary
+### 概要
 
-Prepare the next incremental work item for **Documentation cleanup** without introducing destructive avatar or asset changes.
+**Documentation cleanup** に関する次の小さな作業単位を準備します。破壊的なAvatar変更やAsset変更は導入しません。
 
-### Goal
+### 目的
 
-Build a small, reviewable foundation that supports dry-run analysis, logging, and future NDMF-friendly workflows.
+README、docs、Documentation~、AGENTS、Issue / PR templateを日本語中心に整理する。
 
-### Tasks
+### 作業内容
 
-- Confirm the expected public API and file placement.
-- Add or update minimal implementation behind safe placeholders.
-- Add user-facing or developer documentation where relevant.
-- Ensure no original assets are modified or deleted.
+- 想定するpublic APIとファイル配置を確認する。
+- 安全なplaceholderまたはDry Run entry pointの背後に最小実装を追加・更新する。
+- 必要に応じてユーザー向けUI文言、ログ、開発者向けドキュメントを日本語で追加する。
+- 元Prefab、元Material、元Texture、元Meshが変更または削除されないことを確認する。
 
-### Acceptance Criteria
+### 受け入れ条件
 
-- Code compiles in Unity 2022.3.
-- The feature can be reviewed independently.
-- Dry Run or placeholder behavior is clear in logs or docs.
-- No new external dependency is added without explicit approval.
+- Unity 2022.3でコンパイルできる。
+- 機能が独立してレビューできる。
+- Dry Runまたはplaceholderであることが、ログ、UI、ドキュメントのいずれかで明確に分かる。
+- ユーザーの明示承認なしに新しい外部依存を追加していない。
+- `package.json` のversionを勝手に変更していない。
 
-### Notes / Risks
+### 注意点・リスク
 
-- NDMF, Modular Avatar, and VRChat SDK APIs must be verified against official documentation before direct use.
-- Texture, material, UV, and mesh operations can become destructive if scoped poorly; keep early work report-only.
-
+- NDMF、Modular Avatar、VRChat SDK APIを直接使う前に、公式ドキュメントと互換性を確認する。
+- Texture、Material、UV、Mesh操作は範囲を誤ると破壊的になりやすいため、初期作業はレポートのみとする。
+- `Packages/` ディレクトリを復活させず、package rootの入れ子を作らない。
+- UnityEngine型名と衝突するnamespace、特に `Editor.Texture` のようなnamespaceを作らない。
