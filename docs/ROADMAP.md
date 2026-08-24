@@ -24,10 +24,13 @@
 
 ## Phase 3: Build-time integration
 
-- NDMF build pass prototypeの検討。
+- Parameter CompressorのNDMF `Optimizing` build pass（v0.2.0で実装）。
+- Float / Intの共有同期チャンネル、Encoder / Decoder、Inspector preview（v0.2.0で実装）。
 - ビルド時の生成Asset差し替え。
 - 明示的なopt-inとDry Run preview。
 - Avatar Optimizer、TexTransTool、Modular Avatarなどとの関係整理。
+
+Parameter Compressor以外の自動変換は引き続きDeferredです。Puppetなど高頻度Parameterの個別方針と、VRCFuryとの確実なPlugin orderingは将来検証します。
 
 ## Deferred
 

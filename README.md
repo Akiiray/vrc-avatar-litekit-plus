@@ -2,13 +2,13 @@
 
 `VRC Avatar LiteKit Plus` は、VRChatアバターの軽量化診断、Performance Rankの目標確認、Mobile / Quest / Android / iOS向け変換支援を目的とした、非破壊方針のUnity Editor拡張です。
 
-このリポジトリは `vrc-avatar-toolkit-plus` の姉妹プロジェクトとして開発しています。NDMF や Modular Avatar のようなビルド時変換・非破壊ワークフローの考え方を尊重しつつ、まずは診断、可視化、Dry Run レポートを中心に整備します。
+このリポジトリは `vrc-avatar-toolkit-plus` の姉妹プロジェクトです。診断、可視化、Dry Runレポートに加え、v0.2からNDMF Build clone上で動くParameter Compressorを提供します。
 
-## 現在の開発段階
+## Parameter Compressor（v0.2）
 
-現在は初期開発段階です。v0.1系では、パッケージ構造、ドキュメント、Unityメニュー統合、安全な診断機能、将来機能のためのプレースホルダーを中心に提供しています。
+Avatar Rootの `VRC Avatar LiteKit Plus/Parameter Compressor` Componentを追加し、通常どおりBuildすると、同期Float / Int Parameterを時分割多重化します。Bool、VRChat Built-in、Face Tracking、既知の他ツール内部Parameterは対象外です。
 
-本格的な自動軽量化、Texture Atlas化、Mesh結合、Material統合、Shader変換、Build / Upload 連携は意図的に実装していません。
+元Parameterは削除せず、Build clone上で `networkSynced` だけをfalseへ切り替えるため、名前、型、`saved`、`defaultValue`を維持します。同期チャンネル数を増やすと遅延が減る代わりにbit使用量が増えます。詳しくは[Parameter Compression設計](docs/PARAMETER_COMPRESSION.md)を参照してください。
 
 ## v0.1系でできること
 
@@ -26,7 +26,7 @@
 - Mesh結合、ポリゴン削減、Material統合。
 - Poiyomi / lilToon などの完全なShader変換。
 - Unsupported Componentの自動削除または無効化。
-- VRChat SDK Build API、NDMF API、Build / Upload / MultiPlatform Upload の呼び出し。
+- VRChat SDK Build / Upload / MultiPlatform Upload API の呼び出し。
 
 ## 非破壊・Dry Run方針
 
@@ -59,7 +59,8 @@ VPM配布では、GitHubの `Source code (zip)` ではなく、Releaseに手動�
 - Mobile変換メモ: [`docs/MOBILE_CONVERSION_NOTES.md`](docs/MOBILE_CONVERSION_NOTES.md)
 - Texture最適化メモ: [`docs/TEXTURE_OPTIMIZATION_NOTES.md`](docs/TEXTURE_OPTIMIZATION_NOTES.md)
 - Issue草案: [`docs/ISSUE_DRAFTS.md`](docs/ISSUE_DRAFTS.md)
+- Parameter Compression: [`docs/PARAMETER_COMPRESSION.md`](docs/PARAMETER_COMPRESSION.md)
 
 ## 将来の連携候補
 
-VRChat SDK、NDMF、Modular Avatar、Avatar Optimizer、TexTransTool、VRCQuestTools、lilToon、Poiyomi などは、将来の連携候補です。ただし、v0.1系では直接依存を追加せず、公式ドキュメントやAPIの安定性を確認したうえで、ユーザー確認を経て検討します。
+Parameter CompressorはVRChat SDK3 - AvatarsとNDMFを必須とします。Modular Avatar、VRCFury、MenuBuilderは依存関係に含めず、設定を自動変更しません。

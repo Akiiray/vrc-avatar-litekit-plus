@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0] - 2026-08-24
+
+### Added
+
+- 同期Float / Intを共有チャンネルで時分割送信するParameter Compressorを追加しました。
+- 同期チャンネル数、Parameter除外、bit削減量、Batch数、推定遅延を表示する日本語Inspectorを追加しました。
+- NDMF `Optimizing` PhaseでBuild cloneだけを変更するEncoder / Decoder生成処理を追加しました。
+- Built-in、Face Tracking、LiteKit自身、LightLimitChanger、VRCFury同期Parameterの自動除外とMenuBuilder併用警告を追加しました。
+
+### Changed
+
+- VRChat SDK3 - Avatars 3.7.0とNDMF 1.5.0を必須依存にしました。Modular Avatarは必須ではありません。
+
 ## [0.1.1] - 2026-07-02
 
 ### Fixed
