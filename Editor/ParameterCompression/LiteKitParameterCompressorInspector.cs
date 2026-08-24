@@ -5,12 +5,14 @@ using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDK3.Avatars.ScriptableObjects;
+using Akiiray.VRCAvatarLiteKitPlus.Editor.Localization;
 
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
 {
     [CustomEditor(typeof(LiteKitParameterCompressor))]
     internal sealed class LiteKitParameterCompressorInspector : UnityEditor.Editor
     {
+        private static string L(string japanese, string english) => LiteKitLocalization.Select(japanese, english);
         private List<ScannedParameter> scanned = new List<ScannedParameter>();
         private readonly Dictionary<string, bool> sourceFoldouts = new Dictionary<string, bool>();
         private VRCAvatarDescriptor descriptor;
@@ -30,48 +32,48 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
         {
             serializedObject.Update();
             EditorGUILayout.LabelField("VRC Avatar LiteKit Parameter Compressor", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("NDMF Build時に同期Float / Intを共有チャンネルで時分割送信します。元アセットは変更しません。", MessageType.Info);
-            EditorGUILayout.PropertyField(enableCompression, new GUIContent("圧縮を有効にする"));
+            EditorGUILayout.HelpBox(L("NDMF Build時に同期Float / Intを共有チャンネルで時分割送信します。元アセットは変更しません。", "During an NDMF build, synchronized Float / Int parameters are time-multiplexed over shared channels. Original assets are not modified."), MessageType.Info);
+            EditorGUILayout.PropertyField(enableCompression, new GUIContent(L("圧縮を有効にする", "Enable Compression")));
 
             var excluded = ReadExcluded();
             var provisional = CompressionPlan.Create(scanned, excluded, 1);
             var sliderMax = Math.Max(1, provisional.MaxUsefulChannelCount);
-            syncChannelCount.intValue = EditorGUILayout.IntSlider(new GUIContent("同期チャンネル数"),
+            syncChannelCount.intValue = EditorGUILayout.IntSlider(new GUIContent(L("同期チャンネル数", "Sync Channel Count")),
                 Mathf.Clamp(syncChannelCount.intValue, 1, sliderMax), 1, sliderMax);
-            EditorGUILayout.HelpBox("リモートへの同時送信数です。増やすと反映が速くなりますが、bit消費が増えます。", MessageType.None);
+            EditorGUILayout.HelpBox(L("リモートへの同時送信数です。増やすと反映が速くなりますが、bit消費が増えます。", "The number of values sent to remote users at once. More channels update faster but consume more bits."), MessageType.None);
             serializedObject.ApplyModifiedProperties();
 
             if (descriptor == null)
-                EditorGUILayout.HelpBox("このComponentはVRCAvatarDescriptorがあるAvatar Rootで使用してください。", MessageType.Error);
+                EditorGUILayout.HelpBox(L("このComponentはVRCAvatarDescriptorがあるAvatar Rootで使用してください。", "Use this component on an Avatar Root with a VRCAvatarDescriptor."), MessageType.Error);
 
             DrawCompatibilityMessages();
             DrawPreview(CompressionPlan.Create(scanned, ReadExcluded(), syncChannelCount.intValue));
 
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Parameter一覧", EditorStyles.boldLabel);
-            if (GUILayout.Button("再スキャン", GUILayout.Width(90))) Rescan();
+            EditorGUILayout.LabelField(L("Parameter一覧", "Parameters"), EditorStyles.boldLabel);
+            if (GUILayout.Button(L("再スキャン", "Rescan"), GUILayout.Width(90))) Rescan();
             EditorGUILayout.EndHorizontal();
             DrawParameterList();
-            EditorGUILayout.HelpBox("プレビュー値はEditor上で取得できるParameterに基づく推定です。NDMF Build時の最終Parameter構成によって結果が異なる場合があります。Build時の結果を正としてください。", MessageType.Info);
+            EditorGUILayout.HelpBox(L("プレビュー値はNDMF ParameterInfo等に基づく推定です。\nBuild時の最終Parameter構成によって結果が異なる場合があります。", "Preview values are estimates based on the current NDMF parameter information.\nThe final result may differ during the avatar build."), MessageType.Info);
         }
 
         private void DrawPreview(CompressionPlan plan)
         {
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("圧縮結果プレビュー", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"対象: Float {plan.FloatCount}個 + Int {plan.IntCount}個 = {plan.Targets.Count}個");
+            EditorGUILayout.LabelField(L("圧縮結果プレビュー", "Compression Preview"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L($"対象: Float {plan.FloatCount}個 + Int {plan.IntCount}個 = {plan.Targets.Count}個", $"Targets: {plan.FloatCount} Float + {plan.IntCount} Int = {plan.Targets.Count}"));
             if (plan.Targets.Count == 0)
             {
-                EditorGUILayout.HelpBox("圧縮対象の同期Float / Int Parameterはありません。", MessageType.Info);
+                EditorGUILayout.HelpBox(L("圧縮対象の同期Float / Int Parameterはありません。", "There are no eligible synchronized Float / Int parameters."), MessageType.Info);
                 return;
             }
-            EditorGUILayout.LabelField($"圧縮前: {plan.OriginalBits}bit");
-            EditorGUILayout.LabelField($"圧縮後: {plan.CompressedBits}bit");
+            EditorGUILayout.LabelField(L($"圧縮前: {plan.OriginalBits}bit", $"Before: {plan.OriginalBits} bits"));
+            EditorGUILayout.LabelField(L($"圧縮後: {plan.CompressedBits}bit", $"After: {plan.CompressedBits} bits"));
             var percent = plan.OriginalBits == 0 ? 0f : plan.SavedBits * 100f / plan.OriginalBits;
-            EditorGUILayout.LabelField($"節約: {plan.SavedBits}bit ({percent:0.0}%)");
-            EditorGUILayout.LabelField($"同期チャンネル: {plan.EffectiveChannelCount} ch / Batch数: {plan.Batches.Count}");
-            EditorGUILayout.LabelField($"同期遅延（最大一周）: 約 {plan.CycleSeconds:0.00}秒");
+            EditorGUILayout.LabelField(L($"節約: {plan.SavedBits}bit ({percent:0.0}%)", $"Saved: {plan.SavedBits} bits ({percent:0.0}%)"));
+            EditorGUILayout.LabelField(L($"同期チャンネル: {plan.EffectiveChannelCount} ch / Batch数: {plan.Batches.Count}", $"Sync Channels: {plan.EffectiveChannelCount} / Batches: {plan.Batches.Count}"));
+            EditorGUILayout.LabelField(L($"同期遅延（最大一周）: 約 {plan.CycleSeconds:0.00}秒", $"Maximum Sync Cycle: about {plan.CycleSeconds:0.00} seconds"));
             if (plan.SavedBits <= 0) EditorGUILayout.HelpBox("圧縮によるbit削減効果がないため、Build時は処理しません。", MessageType.Warning);
             if (plan.Batches.Count > CompressionConstants.MaximumBatchIndex)
                 EditorGUILayout.HelpBox("Parameter Compressorで扱えるBatch数の上限を超えています。同期チャンネル数を増やすか、圧縮対象を減らしてください。", MessageType.Error);

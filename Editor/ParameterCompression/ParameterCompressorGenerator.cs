@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using nadena.dev.ndmf;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -12,17 +13,12 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
 {
     internal static class ParameterCompressorGenerator
     {
-        internal static bool Apply(VRCAvatarDescriptor descriptor, LiteKitParameterCompressor settings, out string message)
+        internal static bool Apply(BuildContext context, VRCAvatarDescriptor descriptor, LiteKitParameterCompressor settings, out string message)
         {
             message = null;
             if (descriptor == null) { message = "VRCAvatarDescriptor が見つかりません。"; return false; }
             if (settings == null || !settings.EnableCompression) { message = "Parameter Compressor は無効です。"; return false; }
             if (descriptor.expressionParameters == null) { message = "Expression Parameters が設定されていません。"; return false; }
-
-            // NDMF のビルド用 Avatar 上でも、参照先が Project Asset の可能性を残さないため明示的に複製する。
-            var expressionParameters = UnityEngine.Object.Instantiate(descriptor.expressionParameters);
-            expressionParameters.name = descriptor.expressionParameters.name + " (LiteKit Build Clone)";
-            descriptor.expressionParameters = expressionParameters;
 
             var scanned = ParameterScanner.Scan(descriptor);
             var plan = CompressionPlan.Create(scanned, settings.ExcludedParameters, settings.SyncChannelCount);
@@ -36,12 +32,22 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
 
             var originalController = ParameterScanner.GetFxController(descriptor);
             if (originalController == null) { message = "書き込み可能な FX AnimatorController を取得できません。"; return false; }
+
+            // Validation完了後にだけBuild clone用の一時Assetを作り、元Project Assetには触れない。
+            var expressionParameters = UnityEngine.Object.Instantiate(descriptor.expressionParameters);
+            expressionParameters.name = descriptor.expressionParameters.name + " (LiteKit Build Clone)";
+            descriptor.expressionParameters = expressionParameters;
             var controller = UnityEngine.Object.Instantiate(originalController);
             controller.name = originalController.name + " (LiteKit Build Clone)";
             AssignFxController(descriptor, controller);
 
             RewriteExpressionParameters(expressionParameters, plan);
-            GenerateAnimator(controller, plan);
+            var generatedAssets = GenerateAnimator(controller, plan);
+            // Cloneと生成ObjectをNDMFのtemporary assetへ保存し、Controllerから参照される
+            // StateMachine / State / Clip / Behaviourも最終Buildへ確実に追跡させる。
+            context.AssetSaver.SaveAsset(expressionParameters);
+            context.AssetSaver.SaveAsset(controller);
+            foreach (var generatedAsset in generatedAssets) context.AssetSaver.SaveAsset(generatedAsset);
             var finalBits = expressionParameters.parameters.Where(p => p.networkSynced)
                 .Sum(p => p.valueType == VRCExpressionParameters.ValueType.Bool ? 1 : 8);
             message = $"Parameter Compressor: {plan.OriginalBits}bit から {plan.CompressedBits}bit へ圧縮しました（{plan.SavedBits}bit 削減、最終同期使用量 {finalBits}bit）。";
@@ -71,8 +77,9 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
         private static VRCExpressionParameters.Parameter NewParameter(string name, VRCExpressionParameters.ValueType type) =>
             new VRCExpressionParameters.Parameter { name = name, valueType = type, saved = false, defaultValue = 0f, networkSynced = true };
 
-        private static void GenerateAnimator(AnimatorController controller, CompressionPlan plan)
+        private static List<UnityEngine.Object> GenerateAnimator(AnimatorController controller, CompressionPlan plan)
         {
+            var generatedAssets = new List<UnityEngine.Object>();
             controller.layers = controller.layers.Where(l => l.name != CompressionConstants.LayerName).ToArray();
             EnsureParameter(controller, "IsLocal", AnimatorControllerParameterType.Bool);
             EnsureParameter(controller, CompressionConstants.IndexParameter, AnimatorControllerParameterType.Int);
@@ -84,14 +91,16 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
                 EnsureParameter(controller, CompressionConstants.IntChannelPrefix + i, AnimatorControllerParameterType.Int);
 
             var machine = new AnimatorStateMachine { name = CompressionConstants.LayerName + " StateMachine" };
+            generatedAssets.Add(machine);
             var layer = new AnimatorControllerLayer { name = CompressionConstants.LayerName, defaultWeight = 1f, stateMachine = machine };
             controller.AddLayer(layer);
             var idle = machine.AddState("Idle", new Vector3(0, 0));
             var localIdle = machine.AddState("LocalIdle", new Vector3(250, -100));
             var remote = machine.AddState("Remote", new Vector3(250, 150));
+            generatedAssets.Add(idle); generatedAssets.Add(localIdle); generatedAssets.Add(remote);
             machine.defaultState = idle;
-            AddConditionTransition(idle, localIdle, AnimatorConditionMode.If, 0, "IsLocal");
-            AddConditionTransition(idle, remote, AnimatorConditionMode.IfNot, 0, "IsLocal");
+            generatedAssets.Add(AddConditionTransition(idle, localIdle, AnimatorConditionMode.If, 0, "IsLocal"));
+            generatedAssets.Add(AddConditionTransition(idle, remote, AnimatorConditionMode.IfNot, 0, "IsLocal"));
 
             var encoderStates = new List<AnimatorState>();
             for (var index = 0; index < plan.Batches.Count; index++)
@@ -99,36 +108,38 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
                 var batch = plan.Batches[index];
                 var encoder = machine.AddState("Batch_" + batch.Index, new Vector3(500 + index * 180, -100));
                 encoder.motion = CreateTimingClip("LiteKit_PC_Batch_" + batch.Index);
-                ConfigureDriver(encoder, batch, true);
+                generatedAssets.Add(encoder); generatedAssets.Add(encoder.motion);
+                generatedAssets.Add(ConfigureDriver(encoder, batch, true));
                 encoderStates.Add(encoder);
 
                 var decoder = machine.AddState("Set_B" + batch.Index, new Vector3(500 + index * 180, 150));
-                ConfigureDriver(decoder, batch, false);
-                AddConditionTransition(remote, decoder, AnimatorConditionMode.Equals, batch.Index, CompressionConstants.IndexParameter);
-                AddConditionTransition(decoder, remote, AnimatorConditionMode.NotEqual, batch.Index, CompressionConstants.IndexParameter);
+                generatedAssets.Add(decoder);
+                generatedAssets.Add(ConfigureDriver(decoder, batch, false));
+                generatedAssets.Add(AddConditionTransition(remote, decoder, AnimatorConditionMode.Equals, batch.Index, CompressionConstants.IndexParameter));
+                generatedAssets.Add(AddConditionTransition(decoder, remote, AnimatorConditionMode.NotEqual, batch.Index, CompressionConstants.IndexParameter));
             }
 
-            AddExitTimeTransition(localIdle, encoderStates[0]);
+            // Exit Timeには有効なMotionの長さが必要。Batch数によらず同じ保持時間を使う。
+            localIdle.motion = CreateTimingClip("LiteKit_PC_LocalIdle");
+            generatedAssets.Add(localIdle.motion);
+            generatedAssets.Add(AddExitTimeTransition(localIdle, encoderStates[0]));
             if (encoderStates.Count == 1)
             {
-                localIdle.motion = CreateTimingClip("LiteKit_PC_LocalIdle");
-                AddExitTimeTransition(encoderStates[0], localIdle);
+                generatedAssets.Add(AddExitTimeTransition(encoderStates[0], localIdle));
             }
             else
             {
                 for (var i = 0; i < encoderStates.Count; i++)
-                    AddExitTimeTransition(encoderStates[i], encoderStates[(i + 1) % encoderStates.Count]);
+                    generatedAssets.Add(AddExitTimeTransition(encoderStates[i], encoderStates[(i + 1) % encoderStates.Count]));
             }
+            return generatedAssets;
         }
 
-        private static void ConfigureDriver(AnimatorState state, CompressionBatch batch, bool encoder)
+        private static VRCAvatarParameterDriver ConfigureDriver(AnimatorState state, CompressionBatch batch, bool encoder)
         {
             var driver = state.AddStateMachineBehaviour<VRCAvatarParameterDriver>();
             driver.localOnly = encoder;
             driver.parameters = new List<VRC_AvatarParameterDriver.Parameter>();
-            if (encoder)
-                driver.parameters.Add(new VRC_AvatarParameterDriver.Parameter
-                    { name = CompressionConstants.IndexParameter, type = VRC_AvatarParameterDriver.ChangeType.Set, value = batch.Index });
             for (var channel = 0; channel < batch.Parameters.Count; channel++)
             {
                 var p = batch.Parameters[channel];
@@ -141,6 +152,11 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
                     type = VRC_AvatarParameterDriver.ChangeType.Copy
                 });
             }
+            // Channel値をすべてCopyした後でIndexを更新し、Remoteが新Indexを観測した時点の整合性を保つ。
+            if (encoder)
+                driver.parameters.Add(new VRC_AvatarParameterDriver.Parameter
+                    { name = CompressionConstants.IndexParameter, type = VRC_AvatarParameterDriver.ChangeType.Set, value = batch.Index });
+            return driver;
         }
 
         private static AnimationClip CreateTimingClip(string name)
@@ -159,21 +175,23 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             controller.AddParameter(name, type);
         }
 
-        private static void AddConditionTransition(AnimatorState from, AnimatorState to, AnimatorConditionMode mode, float threshold, string parameter)
+        private static AnimatorStateTransition AddConditionTransition(AnimatorState from, AnimatorState to, AnimatorConditionMode mode, float threshold, string parameter)
         {
             var transition = from.AddTransition(to);
             transition.hasExitTime = false;
             transition.duration = 0f;
             transition.AddCondition(mode, threshold, parameter);
+            return transition;
         }
 
-        private static void AddExitTimeTransition(AnimatorState from, AnimatorState to)
+        private static AnimatorStateTransition AddExitTimeTransition(AnimatorState from, AnimatorState to)
         {
             var transition = from.AddTransition(to);
             transition.hasExitTime = true;
             transition.exitTime = 1f;
             transition.hasFixedDuration = true;
             transition.duration = 0f;
+            return transition;
         }
 
         private static void AssignFxController(VRCAvatarDescriptor descriptor, AnimatorController controller)

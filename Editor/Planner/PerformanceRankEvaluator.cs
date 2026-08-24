@@ -108,7 +108,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Planner
                 TargetText = FormatNumber(targetThreshold) + unit,
                 Excess = excess,
                 BlocksTarget = rank > targetRank,
-                Note = "LiteKit v0.1 estimate based on VRChat public thresholds, not SDK Builder validation."
+                Note = "LiteKit estimate based on public VRChat thresholds, not SDK Builder validation."
             };
             result.Metrics.Add(metric);
             if (metric.BlocksTarget)
@@ -142,7 +142,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Planner
                 TargetText = targetAllowed ? "Allowed" : "False required",
                 Excess = value && !targetAllowed ? 1 : 0,
                 BlocksTarget = rank > targetRank,
-                Note = "LiteKit v0.1 estimate based on VRChat public thresholds, not SDK Builder validation."
+                Note = "LiteKit estimate based on public VRChat thresholds, not SDK Builder validation."
             };
             result.Metrics.Add(metric);
             if (metric.BlocksTarget)
