@@ -27,6 +27,14 @@
 
 ## 言語方針
 
+- LiteKit の Primary UI language は日本語とし、English Window も正式に維持してください。
+- 新しいユーザー向け UI 文言は日本語 / English の両方を Localization layer へ追加してください。
+- 日本語 Window と English Window の UI ロジックをコピーして二重実装しないでください。
+- 日本語版と英語版で Analyzer や処理結果を変えないでください。
+- Codex のレビュー、PR 説明、作業報告は日本語で作成してください。
+- 主要 Window の MenuItem priority を変更するときは、VRC Avatar Toolkit Plus と同じ priority 帯での並びを確認してください。
+- UI に `LiteKit v0.1` のような version 固定文字列を直接追加しないでください。
+
 - このリポジトリの Editor Window、HelpBox、ボタン、ラベル、警告文、ログのユーザー向け文言は、原則として日本語で作成してください。
 - ユーザー向け UI は、日本語話者が Unity 上でそのまま理解できる表現にしてください。
 - PR 説明、レビューコメント、作業報告も原則として日本語で行ってください。

@@ -1,6 +1,8 @@
 # VRC Avatar LiteKit Plus
 
-メニュー: `Tools > VRC Avatar LiteKit Plus > Open LiteKit Window`
+日本語: `Tools > VRC Avatar LiteKit Plus > 日本語ウィンドウ`
+
+English: `Tools > VRC Avatar LiteKit Plus > English Window`
 
 VRC Avatar LiteKit Plus は、VRChatアバターの軽量化診断、Performance Rank目標への到達支援、Quest / Android / iOS向け変換支援を目的とした、非破壊方針のUnity Editor拡張です。
 

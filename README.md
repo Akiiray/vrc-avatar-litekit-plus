@@ -1,5 +1,12 @@
 # VRC Avatar LiteKit Plus
 
+## ウィンドウを開く
+
+- 日本語: `Tools > VRC Avatar LiteKit Plus > 日本語ウィンドウ`
+- English: `Tools > VRC Avatar LiteKit Plus > English Window`
+
+どちらも同じ診断処理を使用し、表示言語とコピーされる Markdown レポートの言語だけが異なります。
+
 `VRC Avatar LiteKit Plus` は、VRChatアバターの軽量化診断、Performance Rankの目標確認、Mobile / Quest / Android / iOS向け変換支援を目的とした、非破壊方針のUnity Editor拡張です。
 
 このリポジトリは `vrc-avatar-toolkit-plus` の姉妹プロジェクトです。診断、可視化、Dry Runレポートに加え、v0.2からNDMF Build clone上で動くParameter Compressorを提供します。

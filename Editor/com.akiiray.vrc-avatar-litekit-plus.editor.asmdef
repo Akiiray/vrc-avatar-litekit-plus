@@ -4,7 +4,7 @@
   "references": [
     "com.akiiray.vrc-avatar-litekit-plus.runtime",
     "nadena.dev.ndmf",
-    "VRC.SDK3.Avatars",
+    "VRC.SDK3A",
     "VRC.SDKBase"
   ],
   "includePlatforms": [

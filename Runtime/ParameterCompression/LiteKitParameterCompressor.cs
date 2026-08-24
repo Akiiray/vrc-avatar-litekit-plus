@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using nadena.dev.ndmf;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
+using VRC.SDKBase;
 
 namespace Akiiray.VRCAvatarLiteKitPlus
 {

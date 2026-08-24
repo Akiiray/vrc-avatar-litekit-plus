@@ -2,78 +2,108 @@ using System.Text;
 using UnityEngine;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Planner;
+using Akiiray.VRCAvatarLiteKitPlus.Editor.Localization;
 
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
 {
     public static class LiteKitReportFormatter
     {
-        public static string ToMarkdown(LiteKitReport report)
+        public static string ToMarkdown(LiteKitReport report, LiteKitLanguage language)
         {
-            if (report == null)
-            {
-                return string.Empty;
-            }
+            if (report == null) return string.Empty;
+            return language == LiteKitLanguage.Japanese ? ToJapaneseMarkdown(report) : ToEnglishMarkdown(report);
+        }
 
+        public static string ToMarkdown(LiteKitReport report) => ToMarkdown(report, LiteKitLanguage.English);
+
+        private static string ToJapaneseMarkdown(LiteKitReport report)
+        {
             var builder = new StringBuilder();
-            builder.AppendLine("# VRC Avatar LiteKit Plus Dry Run Report");
+            builder.AppendLine("# VRC Avatar LiteKit Plus 診断レポート");
             builder.AppendLine();
-            builder.AppendLine($"- Generated time: {report.GeneratedTime}");
-            builder.AppendLine($"- Avatar name: {report.AvatarName}");
-            builder.AppendLine($"- Target platform: {report.TargetPlatform}");
-            builder.AppendLine($"- Target rank: {report.TargetRank}");
-            builder.AppendLine($"- Estimated rank: {report.EstimatedRank}");
+            builder.AppendLine($"- 生成日時: {report.GeneratedTime}");
+            builder.AppendLine($"- Avatar: {report.AvatarName}");
+            builder.AppendLine($"- 対象Platform: {report.TargetPlatform}");
+            builder.AppendLine($"- 目標Performance Rank: {report.TargetRank}以上");
+            builder.AppendLine($"- 推定Performance Rank: {report.EstimatedRank}");
             builder.AppendLine();
-            builder.AppendLine("> Note: LiteKit v0.1 is an independent estimate based on public VRChat Performance Rank thresholds. It is not SDK Builder validation.");
-            builder.AppendLine();
+            builder.AppendLine("> この結果はVRChat公式Performance Rank閾値を基にした推定です。");
+            builder.AppendLine("> VRChat SDK BuilderのValidation結果と完全一致しない場合があります。");
+            AppendSummary(builder, report, true);
+            AppendMetrics(builder, report, true);
+            AppendRenderers(builder, report, true);
+            AppendMaterials(builder, report, true);
+            AppendTextures(builder, report, true);
+            AppendWarnings(builder, report, true);
+            builder.AppendLine("## 注記");
+            builder.AppendLine(report.Notes);
+            return builder.ToString();
+        }
 
-            builder.AppendLine("## Summary");
-            builder.AppendLine($"- Triangles: {report.Stats.TriangleCount}");
-            builder.AppendLine($"- Renderers: {report.Renderers.Count}");
-            builder.AppendLine($"- Materials: {report.Materials.Count}");
-            builder.AppendLine($"- Textures: {report.Textures.Count}");
-            builder.AppendLine($"- Texture memory estimate: {FormatBytes(report.Stats.EstimatedTextureMemoryBytes)}");
-            builder.AppendLine($"- Mobile warnings: {report.MobileWarnings.Count}");
+        private static string ToEnglishMarkdown(LiteKitReport report)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("# VRC Avatar LiteKit Plus Analysis Report");
             builder.AppendLine();
-
-            builder.AppendLine("## Metric Evaluations");
-            foreach (var metric in report.Evaluation.Metrics)
-            {
-                var excess = metric.Excess > 0 ? $", excess +{metric.Excess:0.##}" : string.Empty;
-                builder.AppendLine($"- {metric.DisplayName}: {metric.ValueText} / target {metric.TargetRank} <= {metric.TargetText} / estimated {metric.EstimatedRank}{excess}");
-            }
+            builder.AppendLine($"- Generated: {report.GeneratedTime}");
+            builder.AppendLine($"- Avatar: {report.AvatarName}");
+            builder.AppendLine($"- Target Platform: {report.TargetPlatform}");
+            builder.AppendLine($"- Target Performance Rank: {report.TargetRank} or better");
+            builder.AppendLine($"- Estimated Performance Rank: {report.EstimatedRank}");
             builder.AppendLine();
-
-            builder.AppendLine("## Renderers Summary");
-            foreach (var renderer in report.Renderers)
-            {
-                builder.AppendLine($"- {renderer.Path}: {renderer.RendererType}, slots {renderer.MaterialSlotCount}, mesh {renderer.MeshName}, triangles {renderer.TriangleCount}, enabled {renderer.Enabled}, active {renderer.GameObjectActiveInHierarchy}");
-            }
-            builder.AppendLine();
-
-            builder.AppendLine("## Materials Summary");
-            foreach (var material in report.Materials)
-            {
-                builder.AppendLine($"- {material.Name}: shader {material.ShaderName}, slots {material.SlotCount}, mobile shader {material.UsesMobileShader}, instancing {material.EnableGpuInstancing}");
-            }
-            builder.AppendLine();
-
-            builder.AppendLine("## Textures Summary");
-            foreach (var texture in report.Textures)
-            {
-                builder.AppendLine($"- {texture.Name}: {texture.Width}x{texture.Height}, {texture.TextureType}, {FormatBytes(texture.EstimatedMemoryBytes)}, importer {texture.ImporterTextureType}, max {texture.ImporterMaxSize}, Android override {texture.AndroidOverride}, iOS override {texture.IosOverride}");
-            }
-            builder.AppendLine();
-
-            builder.AppendLine("## Mobile Warnings");
-            foreach (var warning in report.MobileWarnings)
-            {
-                builder.AppendLine($"- [{warning.Severity}] {warning.Category} at {warning.Path}: {warning.Message}");
-            }
-            builder.AppendLine();
-
+            builder.AppendLine("> This result is an estimate based on public VRChat Performance Rank thresholds.");
+            builder.AppendLine("> It may not exactly match VRChat SDK Builder validation.");
+            AppendSummary(builder, report, false);
+            AppendMetrics(builder, report, false);
+            AppendRenderers(builder, report, false);
+            AppendMaterials(builder, report, false);
+            AppendTextures(builder, report, false);
+            AppendWarnings(builder, report, false);
             builder.AppendLine("## Notes");
             builder.AppendLine(report.Notes);
             return builder.ToString();
+        }
+
+        private static void AppendSummary(StringBuilder b, LiteKitReport r, bool ja)
+        {
+            b.AppendLine(); b.AppendLine(ja ? "## 概要" : "## Summary");
+            b.AppendLine($"- Triangles: {r.Stats.TriangleCount}");
+            b.AppendLine($"- Renderer: {r.Renderers.Count}"); b.AppendLine($"- Material: {r.Materials.Count}");
+            b.AppendLine($"- Texture: {r.Textures.Count}");
+            b.AppendLine($"- {(ja ? "推定Texture Memory" : "Estimated Texture Memory")}: {FormatBytes(r.Stats.EstimatedTextureMemoryBytes)}");
+            b.AppendLine($"- {(ja ? "Mobile警告" : "Mobile Warnings")}: {r.MobileWarnings.Count}");
+        }
+
+        private static void AppendMetrics(StringBuilder b, LiteKitReport r, bool ja)
+        {
+            b.AppendLine(); b.AppendLine(ja ? "## Performance評価" : "## Performance Evaluations");
+            foreach (var m in r.Evaluation.Metrics)
+                b.AppendLine($"- {m.DisplayName}: {m.ValueText} / {(ja ? "目標" : "target")} {m.TargetRank} <= {m.TargetText} / {(ja ? "推定" : "estimated")} {m.EstimatedRank}{(m.Excess > 0 ? $", +{m.Excess:0.##}" : string.Empty)}");
+        }
+
+        private static void AppendRenderers(StringBuilder b, LiteKitReport r, bool ja)
+        {
+            b.AppendLine(); b.AppendLine(ja ? "## Renderer一覧" : "## Renderers");
+            foreach (var x in r.Renderers) b.AppendLine($"- {x.Path}: {x.RendererType}, Material Slots {x.MaterialSlotCount}, Mesh {x.MeshName}, Triangles {x.TriangleCount}, Enabled {x.Enabled}, Active {x.GameObjectActiveInHierarchy}");
+        }
+
+        private static void AppendMaterials(StringBuilder b, LiteKitReport r, bool ja)
+        {
+            b.AppendLine(); b.AppendLine(ja ? "## Material一覧" : "## Materials");
+            foreach (var x in r.Materials) b.AppendLine($"- {x.Name}: Shader {x.ShaderName}, Slots {x.SlotCount}, Mobile Shader {x.UsesMobileShader}, GPU Instancing {x.EnableGpuInstancing}");
+        }
+
+        private static void AppendTextures(StringBuilder b, LiteKitReport r, bool ja)
+        {
+            b.AppendLine(); b.AppendLine(ja ? "## Texture一覧" : "## Textures");
+            foreach (var x in r.Textures) b.AppendLine($"- {x.Name}: {x.Width}x{x.Height}, {x.TextureType}, {FormatBytes(x.EstimatedMemoryBytes)}, Importer {x.ImporterTextureType}, Max {x.ImporterMaxSize}, Android {x.AndroidOverride}, iOS {x.IosOverride}");
+        }
+
+        private static void AppendWarnings(StringBuilder b, LiteKitReport r, bool ja)
+        {
+            b.AppendLine(); b.AppendLine(ja ? "## Mobile警告" : "## Mobile Warnings");
+            foreach (var x in r.MobileWarnings) b.AppendLine($"- [{x.Severity}] {x.Category} / {x.Path}: {x.Message}");
+            b.AppendLine();
         }
 
         public static string ToJson(LiteKitReport report)
