@@ -394,6 +394,14 @@ Codex が PR レビューまたは変更要約を行う場合:
 - `Packages/` ディレクトリの復活
 - Source code zip を VPM package URL として参照する変更
 
+## Parameter Compressor追加ルール
+
+- Parameter Compressorによる変更はNDMF build clone上だけで行い、元Expression Parameters / FX Controllerを直接変更しないでください。
+- 圧縮対象は同期Float / Intだけです。Bool、LiteKit同期Channel、Built-in、Face Trackingを圧縮しないでください。
+- `saved`と`defaultValue`を維持し、元Parameterを削除しないでください。
+- Batch layoutは元Parameter順を基準に決定的にし、Inspector previewではなくBuild時の最終Parameter構成を正としてください。
+- Modular AvatarはOptionalです。Parameter Compressorの必須依存はVRChat SDK3 - AvatarsとNDMFだけです。
+
 ## ユーザー確認が必要な場合
 
 以下の場合は、実装前に必ずユーザーへ確認してください。

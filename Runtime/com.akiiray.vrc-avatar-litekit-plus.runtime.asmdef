@@ -1,0 +1,10 @@
+{
+  "name": "com.akiiray.vrc-avatar-litekit-plus.runtime",
+  "rootNamespace": "Akiiray.VRCAvatarLiteKitPlus",
+  "references": [
+    "nadena.dev.ndmf",
+    "VRC.SDK3.Avatars"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

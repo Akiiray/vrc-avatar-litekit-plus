@@ -1,7 +1,12 @@
 {
   "name": "com.akiiray.vrc-avatar-litekit-plus.editor",
   "rootNamespace": "Akiiray.VRCAvatarLiteKitPlus.Editor",
-  "references": [],
+  "references": [
+    "com.akiiray.vrc-avatar-litekit-plus.runtime",
+    "nadena.dev.ndmf",
+    "VRC.SDK3.Avatars",
+    "VRC.SDKBase"
+  ],
   "includePlatforms": [
     "Editor"
   ],
