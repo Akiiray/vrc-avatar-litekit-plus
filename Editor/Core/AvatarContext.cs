@@ -37,7 +37,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
             IReadOnlyList<TrailRenderer> trailRenderers,
             IReadOnlyList<LineRenderer> lineRenderers,
             IReadOnlyList<Cloth> cloths,
-            IReadOnlyList<DiagnosticMessage> warnings)
+            IReadOnlyList<string> warnings)
         {
             AvatarRoot = avatarRoot;
             AllTransforms = allTransforms;
@@ -55,6 +55,30 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
             LineRenderers = lineRenderers;
             Cloths = cloths;
             Warnings = warnings;
+            Diagnostics = System.Array.Empty<DiagnosticMessage>();
+        }
+
+        internal AvatarContext(
+            GameObject avatarRoot,
+            IReadOnlyList<Transform> allTransforms,
+            IReadOnlyList<Renderer> renderers,
+            IReadOnlyList<SkinnedMeshRenderer> skinnedMeshRenderers,
+            IReadOnlyList<MeshRenderer> meshRenderers,
+            IReadOnlyList<MeshFilter> meshFilters,
+            IReadOnlyList<Material> materials,
+            IReadOnlyList<UnityTexture> textures,
+            IReadOnlyList<Animator> animators,
+            IReadOnlyList<ParticleSystem> particleSystems,
+            IReadOnlyList<Light> lights,
+            IReadOnlyList<AudioSource> audioSources,
+            IReadOnlyList<TrailRenderer> trailRenderers,
+            IReadOnlyList<LineRenderer> lineRenderers,
+            IReadOnlyList<Cloth> cloths,
+            IReadOnlyList<string> warnings,
+            IReadOnlyList<DiagnosticMessage> diagnostics)
+            : this(avatarRoot, allTransforms, renderers, skinnedMeshRenderers, meshRenderers, meshFilters, materials, textures, animators, particleSystems, lights, audioSources, trailRenderers, lineRenderers, cloths, warnings)
+        {
+            Diagnostics = diagnostics ?? System.Array.Empty<DiagnosticMessage>();
         }
 
         public GameObject AvatarRoot { get; }
@@ -72,7 +96,8 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         public IReadOnlyList<TrailRenderer> TrailRenderers { get; }
         public IReadOnlyList<LineRenderer> LineRenderers { get; }
         public IReadOnlyList<Cloth> Cloths { get; }
-        public IReadOnlyList<DiagnosticMessage> Warnings { get; }
+        public IReadOnlyList<string> Warnings { get; }
+        public IReadOnlyList<DiagnosticMessage> Diagnostics { get; }
         public bool IsValid => AvatarRoot != null;
     }
 }

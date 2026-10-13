@@ -162,12 +162,12 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
                 TargetPlatform = targetPlatform, TargetRank = targetRank, EstimatedRank = evaluation.EstimatedRank,
                 Stats = stats, Evaluation = evaluation, Renderers = renderers, Materials = materials, Textures = textures,
                 MobileWarnings = mobileWarnings,
-                ScannerWarnings = context.Warnings.Select(AvatarScanner.LegacyWarning).ToList(),
-                ScannerDiagnostics = new System.Collections.Generic.List<DiagnosticMessage>(context.Warnings),
+                ScannerWarnings = new System.Collections.Generic.List<string>(context.Warnings),
+                ScannerDiagnostics = new System.Collections.Generic.List<DiagnosticMessage>(context.Diagnostics),
                 Notes = T(LiteKitTextKey.ReportNotes)
             };
             analysisState = mobileWarnings.Any(w => w.Severity == "Error") ? AnalysisState.Error
-                : mobileWarnings.Any(w => w.Severity == "Warning") || context.Warnings.Count > 0 || evaluation.TargetPlan.BlockingMetrics.Count > 0
+                : mobileWarnings.Any(w => w.Severity == "Warning") || context.Diagnostics.Count > 0 || evaluation.TargetPlan.BlockingMetrics.Count > 0
                     ? AnalysisState.Warning : AnalysisState.Success;
             LiteKitLogger.Info(string.Format(T(LiteKitTextKey.AnalysisCompleted), avatarRoot.name, evaluation.EstimatedRank));
         }

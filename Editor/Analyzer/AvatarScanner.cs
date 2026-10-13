@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Localization;
 using UnityEngine;
@@ -71,6 +72,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 GetComponents<TrailRenderer>(avatarRoot),
                 GetComponents<LineRenderer>(avatarRoot),
                 GetComponents<Cloth>(avatarRoot),
+                warnings.Select(LegacyWarning).ToList(),
                 warnings);
         }
 
