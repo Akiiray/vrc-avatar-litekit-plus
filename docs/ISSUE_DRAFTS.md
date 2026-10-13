@@ -1,6 +1,23 @@
 # Issue草案
 
-このファイルは、今後の作業を小さくレビューしやすい単位に分けるための草案です。各Issueは、元Avatarや元Assetを変更しないDry Run中心の作業として扱います。
+このファイルはv0.1初期計画の草案を履歴として保持します。以下の受け入れ条件やNDMF未依存という前提は当時の制約であり、現行の包括的禁止や未実装一覧ではありません。現行規則は[AGENTS](../AGENTS.md)、実装範囲は[DESIGN](DESIGN.md)、将来範囲は[ROADMAP](ROADMAP.md)を正本とします。
+
+## 現行との差分
+
+| 初期草案 | 現在の扱い |
+| --- | --- |
+| 1–3 Scaffold / Window / Avatar選択 | 基本構造と診断UIは実装済み。以降は個別の改善Issueにする |
+| 4 Texture Usage | 参照一覧と概算は実装済み |
+| 5–6 UV Usage / Texture Waste | Placeholder / 将来機能 |
+| 7 Material Duplicate | 専用FinderはDry Run Placeholder。Material一覧の同名候補表示と区別する。統合は未実装 |
+| 8 Performance Target | Rank評価・目標差分は実装済み |
+| 9 Mobile Texture Profile | 将来の推奨・計画拡張。自動変換は未実装 |
+| 10 NDMF placeholder | 一般最適化用の将来草案。CompressorのNDMF Passはv0.2で実装済み |
+| 11–12 Logging / Documentation | 基本機能は存在し、Localizationや文書整合性を継続改善する |
+
+草案の履歴をそのまま実装指示にせず、現行との差分から新Issueの範囲を定めます。
+
+## v0.1初期草案（履歴）
 
 ## 1. Repository scaffoldとpackage metadata
 
