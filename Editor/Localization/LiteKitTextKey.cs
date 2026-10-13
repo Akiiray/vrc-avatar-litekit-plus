@@ -12,6 +12,6 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Localization
         Generated, Platform, SkinnedMeshes, MeshRenderers, MaterialSlots, UniqueMaterials,
         UniqueTextures, Path, Type, Mesh, EnabledLabel, Active, BlendShapes, Bones,
         Shader, Instancing, MobileShader, SameNameCandidates, Resolution, Mipmap,
-        TextureType, ImporterMaxSize, AndroidOverride, IosOverride, Copied
+        TextureType, ImporterMaxSize, AndroidOverride, IosOverride, Copied, Stale, AnalysisStarted, AnalysisCompleted, ReportNotes, PerformanceLine, RankSuffix
     }
 }

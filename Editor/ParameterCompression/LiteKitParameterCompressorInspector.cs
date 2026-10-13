@@ -55,7 +55,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             if (GUILayout.Button(L("再スキャン", "Rescan"), GUILayout.Width(90))) Rescan();
             EditorGUILayout.EndHorizontal();
             DrawParameterList();
-            EditorGUILayout.HelpBox(L("プレビュー値はNDMF ParameterInfo等に基づく推定です。\nBuild時の最終Parameter構成によって結果が異なる場合があります。", "Preview values are estimates based on the current NDMF parameter information.\nThe final result may differ during the avatar build."), MessageType.Info);
+            EditorGUILayout.HelpBox(LiteKitLocalization.Get(LiteKitLocalization.CurrentLanguage, LiteKitTextKey.PreviewDisclaimer), MessageType.Info);
         }
 
         private void DrawPreview(CompressionPlan plan)
@@ -74,21 +74,21 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             EditorGUILayout.LabelField(L($"節約: {plan.SavedBits}bit ({percent:0.0}%)", $"Saved: {plan.SavedBits} bits ({percent:0.0}%)"));
             EditorGUILayout.LabelField(L($"同期チャンネル: {plan.EffectiveChannelCount} ch / Batch数: {plan.Batches.Count}", $"Sync Channels: {plan.EffectiveChannelCount} / Batches: {plan.Batches.Count}"));
             EditorGUILayout.LabelField(L($"同期遅延（最大一周）: 約 {plan.CycleSeconds:0.00}秒", $"Maximum Sync Cycle: about {plan.CycleSeconds:0.00} seconds"));
-            if (plan.SavedBits <= 0) EditorGUILayout.HelpBox("圧縮によるbit削減効果がないため、Build時は処理しません。", MessageType.Warning);
+            if (plan.SavedBits <= 0) EditorGUILayout.HelpBox(L("圧縮によるbit削減効果がないため、Build時は処理しません。", "No bit savings; compression will be skipped during the build."), MessageType.Warning);
             if (plan.Batches.Count > CompressionConstants.MaximumBatchIndex)
-                EditorGUILayout.HelpBox("Parameter Compressorで扱えるBatch数の上限を超えています。同期チャンネル数を増やすか、圧縮対象を減らしてください。", MessageType.Error);
-            if (plan.CycleSeconds > 3f) EditorGUILayout.HelpBox("同期遅延が大きくなります。リモート側への反映に影響する可能性があります。", MessageType.Warning);
-            else if (plan.CycleSeconds > 1f) EditorGUILayout.HelpBox("同期チャンネル数を増やすと遅延を短縮できます。", MessageType.Info);
-            if (plan.Targets.Any(p => p.Saved)) EditorGUILayout.HelpBox("saved Parameterが含まれています。ワールド移動やAvatar読み込み直後は、リモート側への値の再同期に時間がかかる場合があります。saved設定自体は維持されます。", MessageType.Info);
+                EditorGUILayout.HelpBox(L("Parameter Compressorで扱えるBatch数の上限を超えています。同期チャンネル数を増やすか、圧縮対象を減らしてください。", "The batch limit is exceeded. Increase channels or reduce compression targets."), MessageType.Error);
+            if (plan.CycleSeconds > 3f) EditorGUILayout.HelpBox(L("同期遅延が大きくなります。リモート側への反映に影響する可能性があります。", "High sync latency may delay updates for remote users."), MessageType.Warning);
+            else if (plan.CycleSeconds > 1f) EditorGUILayout.HelpBox(L("同期チャンネル数を増やすと遅延を短縮できます。", "More sync channels can reduce latency."), MessageType.Info);
+            if (plan.Targets.Any(p => p.Saved)) EditorGUILayout.HelpBox(L("saved Parameterが含まれています。ワールド移動やAvatar読み込み直後は、リモート側への値の再同期に時間がかかる場合があります。saved設定自体は維持されます。", "Saved parameters are included. Remote resynchronization may take time after world changes or avatar loading. The saved settings are preserved."), MessageType.Info);
 
             var currentBits = scanned.Where(p => p.NetworkSynced).Sum(p => p.BitCost);
             var finalBits = Math.Max(0, currentBits - plan.OriginalBits + plan.CompressedBits);
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Parameter使用量 (256bit)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Parameter使用量 (256bit)", "Parameter Usage (256 bits)"), EditorStyles.boldLabel);
             DrawBudgetBar(finalBits, plan.CompressedBits);
-            EditorGUILayout.LabelField($"圧縮後 {finalBits}bit / 256bit（削減 {plan.SavedBits}bit）");
+            EditorGUILayout.LabelField(L($"圧縮後 {finalBits}bit / 256bit（削減 {plan.SavedBits}bit）", $"After: {finalBits} / 256 bits (saved: {plan.SavedBits} bits)"));
             if (finalBits > CompressionConstants.ParameterBudgetBits)
-                EditorGUILayout.HelpBox("圧縮後もParameter予算 256bit を超過しています。", MessageType.Error);
+                EditorGUILayout.HelpBox(L("圧縮後もParameter予算 256bit を超過しています。", "The compressed parameters still exceed the 256-bit budget."), MessageType.Error);
         }
 
         private static void DrawBudgetBar(int finalBits, int channelBits)
@@ -100,7 +100,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             var channelWidth = rect.width * Mathf.Clamp01(channelBits / 256f);
             EditorGUI.DrawRect(new Rect(rect.x, rect.y, nonWidth, rect.height), new Color(0.35f, 0.62f, 0.85f));
             EditorGUI.DrawRect(new Rect(rect.x + nonWidth, rect.y, Mathf.Min(channelWidth, rect.width - nonWidth), rect.height), new Color(0.95f, 0.62f, 0.20f));
-            GUI.Label(rect, "  非圧縮（青） / 圧縮Channel（橙） / 空き", EditorStyles.miniLabel);
+            GUI.Label(rect, L("  非圧縮（青） / 圧縮Channel（橙） / 空き", "  Uncompressed (blue) / Channels (orange) / Free"), EditorStyles.miniLabel);
         }
 
         private void DrawParameterList()
@@ -114,13 +114,13 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
                 foreach (var p in group)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField($"{p.Name}  [{p.Type} / {p.BitCost}bit / {(p.NetworkSynced ? "Synced" : "Local")} / {(p.Saved ? "Saved" : "Not Saved")}]", EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField($"{p.Name}  [{p.Type} / {p.BitCost}bit / {(p.NetworkSynced ? L("同期", "Synced") : L("ローカル", "Local"))} / {(p.Saved ? L("保存", "Saved") : L("未保存", "Not Saved"))}]", EditorStyles.miniLabel);
                     var eligible = p.NetworkSynced && p.Type != VRCExpressionParameters.ValueType.Bool &&
                                    !ParameterExclusionRules.IsAutomaticallyExcluded(p.Name, null);
                     using (new EditorGUI.DisabledScope(!eligible))
                     {
                         var excluded = ContainsExcluded(p.Name);
-                        var nextExcluded = GUILayout.Toggle(excluded, excluded ? "圧縮除外" : "圧縮対象", "Button", GUILayout.Width(80));
+                        var nextExcluded = GUILayout.Toggle(excluded, excluded ? L("圧縮除外", "Excluded") : L("圧縮対象", "Included"), "Button", GUILayout.Width(80));
                         if (eligible && nextExcluded != excluded) SetExcluded(p.Name, nextExcluded);
                     }
                     EditorGUILayout.EndHorizontal();
@@ -132,11 +132,11 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
         private void DrawCompatibilityMessages()
         {
             if (scanned.Any(p => ParameterExclusionRules.IsMenuBuilder(p.Name)))
-                EditorGUILayout.HelpBox("MenuBuilderの圧縮機能が検出されました。Parameter Compressorとの併用は推奨されません。MenuBuilder側の圧縮設定をOFFにしてください。", MessageType.Warning);
+                EditorGUILayout.HelpBox(L("MenuBuilderの圧縮機能が検出されました。Parameter Compressorとの併用は推奨されません。MenuBuilder側の圧縮設定をOFFにしてください。", "MenuBuilder compression was detected. Combining it with Parameter Compressor is not recommended. Disable compression in MenuBuilder."), MessageType.Warning);
             if (scanned.Any(p => ParameterExclusionRules.IsVrcFurySync(p.Name)))
-                EditorGUILayout.HelpBox("VRCFuryの同期用と思われるParameterを検出しました。これらは圧縮対象から自動的に除外します。", MessageType.Info);
+                EditorGUILayout.HelpBox(L("VRCFuryの同期用と思われるParameterを検出しました。これらは圧縮対象から自動的に除外します。", "Likely VRCFury sync parameters were detected and are automatically excluded."), MessageType.Info);
             if (scanned.Any(p => ParameterExclusionRules.IsFaceTracking(p.Name)))
-                EditorGUILayout.HelpBox("Face Tracking Parameterが検出されました。高頻度で更新されるため、Parameter Compressorの圧縮対象から自動的に除外されます。", MessageType.Info);
+                EditorGUILayout.HelpBox(L("Face Tracking Parameterが検出されました。高頻度で更新されるため、Parameter Compressorの圧縮対象から自動的に除外されます。", "Face Tracking parameters were detected and automatically excluded because they update frequently."), MessageType.Info);
         }
 
         private void Rescan()

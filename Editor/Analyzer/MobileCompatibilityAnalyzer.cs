@@ -7,12 +7,8 @@ using Akiiray.VRCAvatarLiteKitPlus.Editor.Core;
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
 {
     [Serializable]
-    public sealed class MobileCompatibilityWarning
+    public sealed class MobileCompatibilityWarning : DiagnosticMessage
     {
-        public string Severity;
-        public string Category;
-        public string Path;
-        public string Message;
     }
 
     public sealed class MobileCompatibilityAnalyzer
@@ -30,50 +26,50 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 // v0.1 heuristic only: VRChat mobile compatibility is approximated by shader name prefix.
                 if (!material.UsesMobileShader)
                 {
-                    Add(warnings, "Warning", "Shader", material.Name, $"Material uses non VRChat/Mobile shader: {material.ShaderName}");
+                    Add(warnings, "Warning", "Shader", material.Name, "NonMobileShader", material.ShaderName);
                 }
 
                 if (!material.EnableGpuInstancing)
                 {
-                    Add(warnings, "Info", "Material", material.Name, "GPU Instancing is OFF. This is a recommendation only; LiteKit will not modify the material.");
+                    Add(warnings, "Info", "Material", material.Name, "InstancingOff");
                 }
             }
 
-            AddComponents<Light>(context.AvatarRoot, warnings, "Light", "Lights are removed or unsupported on mobile avatars.");
-            AddComponents<Camera>(context.AvatarRoot, warnings, "Camera", "Cameras may be incompatible with mobile avatar targets.");
-            AddComponents<Cloth>(context.AvatarRoot, warnings, "Cloth", "Cloth is not supported for mobile avatar display.");
-            AddComponents<AudioSource>(context.AvatarRoot, warnings, "AudioSource", "Audio Sources are removed on mobile avatars.");
-            AddComponents<Rigidbody>(context.AvatarRoot, warnings, "Rigidbody", "Physics Rigidbodies are limited on mobile avatars.");
-            AddComponents<Collider>(context.AvatarRoot, warnings, "Collider", "Physics Colliders are limited on mobile avatars.");
-            AddComponents<Joint>(context.AvatarRoot, warnings, "Joint", "Joints can be problematic for mobile avatars.");
-            AddComponents<IConstraint>(context.AvatarRoot, warnings, "Unity Constraint", "Unity constraints count toward constraint limits.");
-            AddComponents<ParticleSystem>(context.AvatarRoot, warnings, "ParticleSystem", "Particle Systems are heavily limited on mobile avatars.");
-            AddComponents<TrailRenderer>(context.AvatarRoot, warnings, "TrailRenderer", "Trail Renderers are limited on mobile avatars.");
-            AddComponents<LineRenderer>(context.AvatarRoot, warnings, "LineRenderer", "Line Renderers are limited on mobile avatars.");
+            AddComponents<Light>(context.AvatarRoot, warnings, "Light", "LightMobile");
+            AddComponents<Camera>(context.AvatarRoot, warnings, "Camera", "CameraMobile");
+            AddComponents<Cloth>(context.AvatarRoot, warnings, "Cloth", "ClothMobile");
+            AddComponents<AudioSource>(context.AvatarRoot, warnings, "AudioSource", "AudioMobile");
+            AddComponents<Rigidbody>(context.AvatarRoot, warnings, "Rigidbody", "RigidbodyMobile");
+            AddComponents<Collider>(context.AvatarRoot, warnings, "Collider", "ColliderMobile");
+            AddComponents<Joint>(context.AvatarRoot, warnings, "Joint", "JointMobile");
+            AddComponents<IConstraint>(context.AvatarRoot, warnings, "Unity Constraint", "ConstraintMobile");
+            AddComponents<ParticleSystem>(context.AvatarRoot, warnings, "ParticleSystem", "ParticleMobile");
+            AddComponents<TrailRenderer>(context.AvatarRoot, warnings, "TrailRenderer", "TrailMobile");
+            AddComponents<LineRenderer>(context.AvatarRoot, warnings, "LineRenderer", "LineMobile");
 
             return warnings;
         }
 
-        private static void AddComponents<T>(GameObject root, List<MobileCompatibilityWarning> warnings, string category, string message)
+        private static void AddComponents<T>(GameObject root, List<MobileCompatibilityWarning> warnings, string category, string code)
         {
             var components = root.GetComponentsInChildren<T>(true);
             foreach (var component in components)
             {
                 if (component is Component unityComponent)
                 {
-                    Add(warnings, "Warning", category, AvatarScanner.GetPath(unityComponent.transform), message);
+                    Add(warnings, "Warning", category, AvatarScanner.GetPath(unityComponent.transform), code);
                 }
             }
         }
 
-        private static void Add(List<MobileCompatibilityWarning> warnings, string severity, string category, string path, string message)
+        private static void Add(List<MobileCompatibilityWarning> warnings, string severity, string category, string path, string code, string argument = null)
         {
             warnings.Add(new MobileCompatibilityWarning
             {
                 Severity = severity,
                 Category = category,
                 Path = path,
-                Message = message
+                Code = code, Argument = argument
             });
         }
     }

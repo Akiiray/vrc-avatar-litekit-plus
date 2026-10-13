@@ -8,6 +8,14 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
     [Serializable]
     public sealed class LiteKitReport
     {
+        [NonSerialized] public UnityEngine.GameObject AnalyzedAvatar;
+        public bool AnalysisCompleted;
+        public bool IsStale;
+
+        public bool Matches(UnityEngine.GameObject avatar, LiteKitPlatform platform, PerformanceRank rank) =>
+            AnalysisCompleted && !IsStale && AnalyzedAvatar != null &&
+            AnalyzedAvatar == avatar && TargetPlatform == platform && TargetRank == rank;
+
         public string GeneratedTime;
         public string AvatarName;
         public LiteKitPlatform TargetPlatform;
@@ -19,7 +27,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         public List<MaterialUsageInfo> Materials = new List<MaterialUsageInfo>();
         public List<TextureUsageInfo> Textures = new List<TextureUsageInfo>();
         public List<MobileCompatibilityWarning> MobileWarnings = new List<MobileCompatibilityWarning>();
-        public List<string> ScannerWarnings = new List<string>();
+        public List<DiagnosticMessage> ScannerWarnings = new List<DiagnosticMessage>();
         public string Notes;
     }
 }

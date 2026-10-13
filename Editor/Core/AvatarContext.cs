@@ -9,6 +9,16 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
     /// All collections are gathered with inactive GameObjects included because VRChat's
     /// Performance Rank counts disabled GameObjects and disabled Components.
     /// </summary>
+    [System.Serializable]
+    public class DiagnosticMessage
+    {
+        public string Code;
+        public string Argument;
+        public string Severity;
+        public string Category;
+        public string Path;
+    }
+
     public sealed class AvatarContext
     {
         public AvatarContext(
@@ -27,7 +37,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
             IReadOnlyList<TrailRenderer> trailRenderers,
             IReadOnlyList<LineRenderer> lineRenderers,
             IReadOnlyList<Cloth> cloths,
-            IReadOnlyList<string> warnings)
+            IReadOnlyList<DiagnosticMessage> warnings)
         {
             AvatarRoot = avatarRoot;
             AllTransforms = allTransforms;
@@ -62,7 +72,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         public IReadOnlyList<TrailRenderer> TrailRenderers { get; }
         public IReadOnlyList<LineRenderer> LineRenderers { get; }
         public IReadOnlyList<Cloth> Cloths { get; }
-        public IReadOnlyList<string> Warnings { get; }
+        public IReadOnlyList<DiagnosticMessage> Warnings { get; }
         public bool IsValid => AvatarRoot != null;
     }
 }

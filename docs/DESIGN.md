@@ -24,7 +24,7 @@ Editor / Runtime assemblyは各1つです。現在PackageとしてSDK / NDMFを�
 
 診断は元Assetを変更しません。非アクティブGameObjectや無効Componentも対象です。Texture参照はShaderUtilでTexture propertyを走査します。Texture memoryは概算であり、RankやMobile判定もSDK Validationの代替保証ではありません。
 
-Analyzer / Plannerの処理を言語別に二重実装しません。ユーザー向け表示と翻訳はLocalizationへ集約する方針です。現行には固定文言の残存があり、完全な翻訳対応を保証する記述はしません。
+Analyzer / Plannerの処理を言語別に二重実装しません。ユーザー向け表示と翻訳はLocalizationへ集約する方針です。Scanner / Mobile診断はコード・対象・Severityを保持し、UIとMarkdown表示時にLocalizationで翻訳します。JSONは診断コードを含むデータ出力です。
 
 ## Parameter Compressorの流れ
 
@@ -43,10 +43,12 @@ Texture Atlas、UV変更、Mesh結合、ポリゴン削減、Material統合、Sh
 ## 現行の制限と後続検証
 
 - VRCFuryの確実なPlugin orderingは未確定です。推測でorderingを指定しません。
-- Inspector取得元の「ParameterInfo等」という現行表示は実走査と一致せず、後続の文言修正候補です。
+- Inspector PreviewはDescriptorのExpression Parameters / FX AnimatorControllerを取得元として説明します。NDMF ParameterInfoを使用するという説明はしません。
 - Component追加時ONという現行挙動と、追加後ONを求める既存案内の差異は後続の仕様・文言整理候補です。
 - 予約Parameter / Layer名の衝突、既存Animatorの型一致、clone参照の安全性、実ネットワーク同期は個別検証が必要です。
-- 対象・条件変更後の古い診断結果、警告severity表示、Localization漏れは後続UI修正候補です。
+- Reportは診断対象Avatar参照・診断完了状態・Platform・目標Rankを保持します。対象または条件変更でstaleになり、再診断までサマリー・詳細・コピーを表示しません。言語・Foldout変更ではstaleにしません。
+- Avatar内部の編集や外部Asset変更を自動検出する仕組みはありません。編集後は再診断してください。
+- Severityに従ってInfo / Warning / Errorを表示し、Infoだけでは診断状態を警告にしません。
 
 ## 文書の役割
 
