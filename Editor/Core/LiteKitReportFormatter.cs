@@ -1,7 +1,6 @@
+using System;
 using System.Text;
 using UnityEngine;
-using Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer;
-using Akiiray.VRCAvatarLiteKitPlus.Editor.Planner;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Localization;
 
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
@@ -11,104 +10,61 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         public static string ToMarkdown(LiteKitReport report, LiteKitLanguage language)
         {
             if (report == null) return string.Empty;
-            return language == LiteKitLanguage.Japanese ? ToJapaneseMarkdown(report) : ToEnglishMarkdown(report);
+            var b = new StringBuilder();
+            Func<LiteKitTextKey, string> t = key => LiteKitLocalization.Get(language, key);
+            Func<string, string> label = value => LiteKitLocalization.Label(language, value);
+            b.AppendLine(t(LiteKitTextKey.ReportTitle)); b.AppendLine();
+            b.AppendLine(string.Format(t(LiteKitTextKey.ReportMetadata), report.GeneratedTime, report.AvatarName,
+                report.TargetPlatform, report.TargetRank, report.EstimatedRank));
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportDisclaimer));
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportSummary));
+            b.AppendLine(string.Format(t(LiteKitTextKey.ReportSummaryLine), report.Stats?.TriangleCount ?? 0,
+                report.Renderers?.Count ?? 0, report.Materials?.Count ?? 0, report.Textures?.Count ?? 0,
+                FormatBytes(report.Stats?.EstimatedTextureMemoryBytes ?? 0), report.MobileWarnings?.Count ?? 0));
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportPerformance));
+            if (report.Evaluation?.Metrics != null)
+                foreach (var m in report.Evaluation.Metrics)
+                {
+                    if (m == null) continue;
+                    b.AppendLine(string.Format(t(LiteKitTextKey.ReportMetric), label(m.DisplayName), label(m.ValueText),
+                        m.TargetRank, LiteKitLocalization.MetricTarget(language, m, report.TargetPlatform), m.EstimatedRank,
+                        m.Excess > 0 ? $", +{m.Excess:0.##}" : string.Empty));
+                }
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportRenderers));
+            if (report.Renderers != null)
+                foreach (var x in report.Renderers)
+                    if (x != null) b.AppendLine(string.Format(t(LiteKitTextKey.ReportRenderer), x.Path, x.RendererType,
+                        x.MaterialSlotCount, x.MeshName, x.TriangleCount, LiteKitLocalization.Boolean(language, x.Enabled),
+                        LiteKitLocalization.Boolean(language, x.GameObjectActiveInHierarchy)));
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportMaterials));
+            if (report.Materials != null)
+                foreach (var x in report.Materials)
+                    if (x != null) b.AppendLine(string.Format(t(LiteKitTextKey.ReportMaterial), x.Name, x.ShaderName,
+                        x.SlotCount, LiteKitLocalization.Boolean(language, x.UsesMobileShader), LiteKitLocalization.Boolean(language, x.EnableGpuInstancing)));
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportTextures));
+            if (report.Textures != null)
+                foreach (var x in report.Textures)
+                    if (x != null) b.AppendLine(string.Format(t(LiteKitTextKey.ReportTexture), x.Name, x.Width, x.Height,
+                        x.TextureType, FormatBytes(x.EstimatedMemoryBytes), x.ImporterTextureType, x.ImporterMaxSize,
+                        LiteKitLocalization.Boolean(language, x.AndroidOverride), LiteKitLocalization.Boolean(language, x.IosOverride)));
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportScanner));
+            if (report.ScannerDiagnostics != null && report.ScannerDiagnostics.Count > 0)
+            {
+                foreach (var x in report.ScannerDiagnostics)
+                    if (x != null) b.AppendLine($"- [{LiteKitLocalization.Severity(language, x.Severity)}] {LiteKitLocalization.Diagnostic(language, x)}");
+            }
+            else if (report.ScannerWarnings != null)
+                foreach (var warning in report.ScannerWarnings) b.AppendLine("- " + warning);
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportMobile));
+            if (report.MobileWarnings != null)
+                foreach (var x in report.MobileWarnings)
+                    if (x != null) b.AppendLine($"- [{LiteKitLocalization.Severity(language, x.Severity)}] {x.Category} / {LiteKitLocalization.Diagnostic(language, x)}");
+            b.AppendLine(); b.AppendLine(t(LiteKitTextKey.ReportNotesHeader));
+            b.AppendLine(string.IsNullOrEmpty(report.Notes) ? t(LiteKitTextKey.ReportNotes) : report.Notes);
+            return b.ToString();
         }
 
         public static string ToMarkdown(LiteKitReport report) => ToMarkdown(report, LiteKitLanguage.English);
-
-        private static string ToJapaneseMarkdown(LiteKitReport report)
-        {
-            var builder = new StringBuilder();
-            builder.AppendLine("# VRC Avatar LiteKit Plus 診断レポート");
-            builder.AppendLine();
-            builder.AppendLine($"- 生成日時: {report.GeneratedTime}");
-            builder.AppendLine($"- Avatar: {report.AvatarName}");
-            builder.AppendLine($"- 対象Platform: {report.TargetPlatform}");
-            builder.AppendLine($"- 目標Performance Rank: {report.TargetRank}以上");
-            builder.AppendLine($"- 推定Performance Rank: {report.EstimatedRank}");
-            builder.AppendLine();
-            builder.AppendLine("> この結果はVRChat公式Performance Rank閾値を基にした推定です。");
-            builder.AppendLine("> VRChat SDK BuilderのValidation結果と完全一致しない場合があります。");
-            AppendSummary(builder, report, true);
-            AppendMetrics(builder, report, true);
-            AppendRenderers(builder, report, true);
-            AppendMaterials(builder, report, true);
-            AppendTextures(builder, report, true);
-            AppendWarnings(builder, report, true);
-            builder.AppendLine("## 注記");
-            builder.AppendLine(LiteKitLocalization.Get(LiteKitLanguage.Japanese, LiteKitTextKey.ReportNotes));
-            return builder.ToString();
-        }
-
-        private static string ToEnglishMarkdown(LiteKitReport report)
-        {
-            var builder = new StringBuilder();
-            builder.AppendLine("# VRC Avatar LiteKit Plus Analysis Report");
-            builder.AppendLine();
-            builder.AppendLine($"- Generated: {report.GeneratedTime}");
-            builder.AppendLine($"- Avatar: {report.AvatarName}");
-            builder.AppendLine($"- Target Platform: {report.TargetPlatform}");
-            builder.AppendLine($"- Target Performance Rank: {report.TargetRank} or better");
-            builder.AppendLine($"- Estimated Performance Rank: {report.EstimatedRank}");
-            builder.AppendLine();
-            builder.AppendLine("> This result is an estimate based on public VRChat Performance Rank thresholds.");
-            builder.AppendLine("> It may not exactly match VRChat SDK Builder validation.");
-            AppendSummary(builder, report, false);
-            AppendMetrics(builder, report, false);
-            AppendRenderers(builder, report, false);
-            AppendMaterials(builder, report, false);
-            AppendTextures(builder, report, false);
-            AppendWarnings(builder, report, false);
-            builder.AppendLine("## Notes");
-            builder.AppendLine(LiteKitLocalization.Get(LiteKitLanguage.English, LiteKitTextKey.ReportNotes));
-            return builder.ToString();
-        }
-
-        private static void AppendSummary(StringBuilder b, LiteKitReport r, bool ja)
-        {
-            b.AppendLine(); b.AppendLine(ja ? "## 概要" : "## Summary");
-            b.AppendLine($"- Triangles: {r.Stats.TriangleCount}");
-            b.AppendLine($"- Renderer: {r.Renderers.Count}"); b.AppendLine($"- Material: {r.Materials.Count}");
-            b.AppendLine($"- Texture: {r.Textures.Count}");
-            b.AppendLine($"- {(ja ? "推定Texture Memory" : "Estimated Texture Memory")}: {FormatBytes(r.Stats.EstimatedTextureMemoryBytes)}");
-            b.AppendLine($"- {(ja ? "Mobile警告" : "Mobile Warnings")}: {r.MobileWarnings.Count}");
-        }
-
-        private static void AppendMetrics(StringBuilder b, LiteKitReport r, bool ja)
-        {
-            b.AppendLine(); b.AppendLine(ja ? "## Performance評価" : "## Performance Evaluations");
-            foreach (var m in r.Evaluation.Metrics)
-                b.AppendLine($"- {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.DisplayName)}: {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.ValueText)} / {(ja ? "目標" : "target")} {m.TargetRank}: {LiteKitLocalization.MetricTarget(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m)} / {(ja ? "推定" : "estimated")} {m.EstimatedRank}{(m.Excess > 0 ? $", +{m.Excess:0.##}" : string.Empty)}");
-        }
-
-        private static void AppendRenderers(StringBuilder b, LiteKitReport r, bool ja)
-        {
-            b.AppendLine(); b.AppendLine(ja ? "## Renderer一覧" : "## Renderers");
-            foreach (var x in r.Renderers) b.AppendLine($"- {x.Path}: {x.RendererType}, Material Slots {x.MaterialSlotCount}, Mesh {x.MeshName}, Triangles {x.TriangleCount}, Enabled {x.Enabled}, Active {x.GameObjectActiveInHierarchy}");
-        }
-
-        private static void AppendMaterials(StringBuilder b, LiteKitReport r, bool ja)
-        {
-            b.AppendLine(); b.AppendLine(ja ? "## Material一覧" : "## Materials");
-            foreach (var x in r.Materials) b.AppendLine($"- {x.Name}: Shader {x.ShaderName}, Slots {x.SlotCount}, Mobile Shader {x.UsesMobileShader}, GPU Instancing {x.EnableGpuInstancing}");
-        }
-
-        private static void AppendTextures(StringBuilder b, LiteKitReport r, bool ja)
-        {
-            b.AppendLine(); b.AppendLine(ja ? "## Texture一覧" : "## Textures");
-            foreach (var x in r.Textures) b.AppendLine($"- {x.Name}: {x.Width}x{x.Height}, {x.TextureType}, {FormatBytes(x.EstimatedMemoryBytes)}, Importer {x.ImporterTextureType}, Max {x.ImporterMaxSize}, Android {x.AndroidOverride}, iOS {x.IosOverride}");
-        }
-
-        private static void AppendWarnings(StringBuilder b, LiteKitReport r, bool ja)
-        {
-            b.AppendLine(); b.AppendLine(ja ? "## Scanner警告" : "## Scanner Warnings");
-            foreach (var x in r.ScannerDiagnostics)
-                b.AppendLine($"- [{LiteKitLocalization.Severity(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x.Severity)}] {LiteKitLocalization.Diagnostic(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x)}");
-            b.AppendLine(); b.AppendLine(ja ? "## Mobile警告" : "## Mobile Warnings");
-            foreach (var x in r.MobileWarnings)
-                b.AppendLine($"- [{LiteKitLocalization.Severity(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x.Severity)}] {x.Category} / {LiteKitLocalization.Diagnostic(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x)}");
-            b.AppendLine();
-        }
 
         public static string ToJson(LiteKitReport report)
         {

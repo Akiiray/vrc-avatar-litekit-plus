@@ -16,7 +16,7 @@ LiteKitは診断・計画と、明示的に有効化された非破壊Build-time
 | NDMF integration | Editor/ParameterCompressionのPluginがOptimizing Phaseに参加 |
 | 将来拡張 | UV / Mesh / Texture最適化等のPlaceholder。実変換とは区別する |
 
-Editor / Runtime assemblyは各1つです。現在PackageとしてSDK / NDMFを必須依存に持ちますが、診断実行がNDMF Buildを開始するわけではありません。依存Versionは[package.json](../package.json)、変更履歴は[CHANGELOG](../CHANGELOG.md)を正本とします。
+Editor / Runtime assemblyは各1つです。VPMの依存解決用にpackage.jsonのvpmDependenciesでSDK / NDMFを宣言します。UnityのdependenciesへVPM依存を置かず、現在PackageとしてSDK / NDMFを必須依存に持ちますが、診断実行がNDMF Buildを開始するわけではありません。依存Versionは[package.json](../package.json)、変更履歴は[CHANGELOG](../CHANGELOG.md)を正本とします。
 
 ## 診断と計画の流れ
 
@@ -24,7 +24,7 @@ Editor / Runtime assemblyは各1つです。現在PackageとしてSDK / NDMFを�
 
 診断は元Assetを変更しません。非アクティブGameObjectや無効Componentも対象です。Texture参照はShaderUtilでTexture propertyを走査します。Texture memoryは概算であり、RankやMobile判定もSDK Validationの代替保証ではありません。
 
-Analyzer / Plannerの処理を言語別に二重実装しません。ユーザー向け表示と翻訳はLocalizationへ集約する方針です。Scanner / Mobile診断はコード・対象・Severityを保持し、UIとMarkdown表示時にLocalizationで翻訳します。Copy JSONはPR前mainの公開フィールドを維持します。ScannerWarningsは従来英語文字列配列、MobileWarningsはSeverity / Category / Path / Message（旧英語文面）です。ScannerDiagnostics、MobileのCode / Argument、stale状態、metric表示判断は内部情報としてNonSerializedにし、JSONへ追加しません。Markdownは一般Scanner警告とMobile警告を別セクションに出力します。
+Analyzer / Plannerの処理を言語別に二重実装しません。ユーザー向け表示と翻訳はLocalizationへ集約する方針です。Scanner / Mobile診断はコード・対象・Severityを保持し、UIとMarkdown表示時にLocalizationで翻訳します。Copy JSONはPR前mainの公開フィールドを維持します。ScannerWarningsは従来英語文字列配列、MobileWarningsはSeverity / Category / Path / Message（旧英語文面）です。ScannerDiagnostics、MobileのCode / Argument、stale状態、metric表示判断は内部情報としてNonSerializedにし、JSONへ追加しません。Markdownは一般Scanner警告とMobile警告を別セクションに出力します。JSON復元後や旧公開フィールドだけのReportでは、構造化情報がなければScannerWarnings / Mobile Messageをそのまま表示します。Notesが存在すれば保持し、未設定時のみLocalized既定文を使います。
 
 ## Parameter Compressorの流れ
 
@@ -55,3 +55,5 @@ Texture Atlas、UV変更、Mesh結合、ポリゴン削減、Material統合、Sh
 利用案内は[Documentation~](../Documentation~/README.md)、今後の範囲は[ROADMAP](ROADMAP.md)、歴史的制約と作業規則は[AGENTS](../AGENTS.md)を参照します。
 
 UI詳細の正本は[Toolkit UIガイド](https://github.com/Akiiray/vrc-avatar-toolkit-plus/blob/main/Documentation~/UI_DESIGN_GUIDELINES.md)、横断責務は[VPMアーキテクチャ](https://github.com/Akiiray/vpm-repository/blob/main/docs/ECOSYSTEM_ARCHITECTURE.md)です。共通化のためにLocalizationやNDMF設計を撤去せず、Shared Packageを先行して新設しません。
+
+公開面の監査・再現手順は[COMPATIBILITY_AUDIT](COMPATIBILITY_AUDIT.md)を参照してください。
