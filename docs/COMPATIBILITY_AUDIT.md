@@ -45,16 +45,18 @@ Window、Inspector、HelpBox、button、label、Preview説明、Markdown固定�
 | 構成 | 静的判定 | 必須依存 | 問題・未検証 |
 | --- | --- | --- | --- |
 | Toolkitのみ | LiteKitへのC# / asmdef / manifest必須参照なし | VRChat Avatars SDK >=3.7.0 | Optionalツールは型・Prefab検出で扱う。実導入・Reflection互換性は未検証 |
-| LiteKitのみ | Toolkitへの必須参照なし。依存metadataを修正 | SDK 3.7.0、NDMF 1.5.0（既存Version指定維持） | 公開0.2.0の依存欄は後述。実解決・コンパイル未検証 |
+| LiteKitのみ | Toolkitへの必須参照なし。依存metadataを修正 | SDK 3.7.0、NDMF >=1.6.0（使用APIに合わせ下限修正） | 公開0.2.0の依存欄は後述。実解決・コンパイル未検証 |
 | Toolkit + LiteKit | ID / assembly名 / namespace / MenuItem衝突、兄弟dependency cycleなし | 上記の共通SDKとNDMF | SDK制約の共通部分は3.7.0。新しいSDKへの制約拡張は今回行わず、Toolkit PreflightのSDK 3.10.5基準との実環境互換性は別検証 |
 
 Editor / Runtime参照を確認しました。NDMFの直接利用はLiteKit Compressorにあり、ToolkitからNDMFを要求しません。両方が存在するときだけ成立するcompile-time参照はありません。兄弟Packageを検出条件にするOptional integrationも見つかりませんでした。文書のGitHubリンクは依存関係ではありません。
 
 ## VPM dependency metadata
 
-[VRChat公式VPM package仕様](https://vcc.docs.vrchat.com/vpm/packages/)は、VPM依存をvpmDependenciesに列挙すると明記しています。LiteKitのasmdefはnadena.dev.ndmf / VRC.SDK3A / VRC.SDKBaseを直接参照するため、source package.jsonのdependenciesをvpmDependenciesへ修正しました。依存名・Version指定とpackage versionは変えていません。UPM直接導入ではVPM依存を別途導入してください。VCC / ALCOM側に依存を提供するVPMリポジトリが登録されていることも必要です。
+[VRChat公式VPM package仕様](https://vcc.docs.vrchat.com/vpm/packages/)は、VPM依存をvpmDependenciesに列挙すると明記しています。LiteKitのasmdefはnadena.dev.ndmf / VRC.SDK3A / VRC.SDKBaseを直接参照するため、source package.jsonのdependenciesをvpmDependenciesへ修正しました。依存名とpackage versionは変えていません。NDMF下限は現行実装の使用APIに合わせて修正しています。UPM直接導入ではVPM依存を別途導入してください。VCC / ALCOM側に依存を提供するVPMリポジトリが登録されていることも必要です。
 
-VPMカタログの公開済みLiteKit 0.2.0にもdependencies欄のみがあり、vpmDependenciesがありません。カタログ上の依存解決漏れは次回patch releaseで修正すべき配布問題です。今回assetをダウンロードして中身を検証したわけではありません。既存0.2.0のasset / index / hashは差し替えず、新Package release → 実asset → SHA256 → 新Versionのindex追加で扱います。
+[NDMF 1.5.0 → 1.6.0の公式差分](https://github.com/bdunderscore/ndmf/compare/1.5.0...1.6.0)ではBuildContext.AssetSaverの追加が確認できます。[1.6.0 IAssetSaver](https://github.com/bdunderscore/ndmf/blob/1.6.0/Editor/API/Serialization/IAssetSaver.cs)にはSaveAssetが存在します。現行GeneratorはこのAPIを使うため、従来の1.5.0固定は静的に不適合です。下限を>=1.6.0へ修正し、変換コードは維持しました。1.6.0以降全Versionでの実動作を保証するものではありません。
+
+VPMカタログの公開済みLiteKit 0.2.0にもdependencies欄のみがあり、vpmDependenciesがありません。NDMF指定も1.5.0です。カタログ上の依存解決漏れは次回patch releaseで修正すべき配布問題です。今回assetをダウンロードして中身を検証したわけではありません。既存0.2.0のasset / index / hashは差し替えず、新Package release → 実asset → SHA256 → 新Versionのindex追加で扱います。
 
 Toolkit 0.2.18のsource / indexはSDK依存の意味が一致しています。LiteKit修正sourceと公開0.2.0 catalogの差は、次回Releaseで反映する未公開修正です。
 

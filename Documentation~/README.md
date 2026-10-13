@@ -17,7 +17,7 @@ Avatar Rootへ`VRC Avatar LiteKit Plus/Parameter Compressor`を追加し、チ�
 
 Inspector Previewは現在のExpression Parameters / FXからの推定です。診断のDry Runとは異なり、有効なComponentは実Build時に変換されます。前段Plugin処理後のBuild構成が最終結果を決めます。
 
-VRChat SDK3 - AvatarsとNDMFが必須です。VCC / ALCOM向けの依存はpackage.jsonのvpmDependenciesへ宣言します。UPMから直接参照する場合は、これらのVPM依存を別途導入する必要があります。Runtime Componentが設定を保持し、NDMF PluginがOptimizing PhaseでBuild cloneのExpression Parameters / FX Controllerを複製して変換し、Encoder / Decoderを生成します。元Assetを上書きせず、LiteKit自身はSDK Build / Uploadを開始しません。Modular Avatarは必須ではありません。
+VRChat SDK3 - AvatarsとNDMFが必須です。開発sourceではAssetSaver APIに合わせNDMF 1.6.0以降を要求します。VCC / ALCOM向けの依存はpackage.jsonのvpmDependenciesへ宣言します。UPMから直接参照する場合は、これらのVPM依存を別途導入する必要があります。Runtime Componentが設定を保持し、NDMF PluginがOptimizing PhaseでBuild cloneのExpression Parameters / FX Controllerを複製して変換し、Encoder / Decoderを生成します。元Assetを上書きせず、LiteKit自身はSDK Build / Uploadを開始しません。Modular Avatarは必須ではありません。
 
 詳細な仕様と互換性は[Parameter Compression](../docs/PARAMETER_COMPRESSION.md)を参照してください。既存の「追加後ON」の案内とは初期値の説明に差異があり、実装の変更は行っていません。
 
