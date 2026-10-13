@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEditor;
+using Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Planner;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Core;
 
@@ -109,6 +110,13 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Localization
             { "TrailMobile", new[] { "Trail RendererはMobileアバターで制限されます。", "Trail Renderers are limited on mobile avatars." } },
             { "LineMobile", new[] { "Line RendererはMobileアバターで制限されます。", "Line Renderers are limited on mobile avatars." } },
         };
+
+        internal static string Diagnostic(LiteKitLanguage language, MobileCompatibilityWarning warning) =>
+            Diagnostic(language, new DiagnosticMessage
+            {
+                Code = warning.Code, Argument = warning.Argument, Path = warning.Path,
+                Severity = warning.Severity, Category = warning.Category
+            });
 
         internal static string Diagnostic(LiteKitLanguage language, DiagnosticMessage diagnostic)
         {

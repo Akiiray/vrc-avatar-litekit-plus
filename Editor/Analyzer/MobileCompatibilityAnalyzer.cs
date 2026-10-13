@@ -7,8 +7,14 @@ using Akiiray.VRCAvatarLiteKitPlus.Editor.Core;
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
 {
     [Serializable]
-    public sealed class MobileCompatibilityWarning : DiagnosticMessage
+    public sealed class MobileCompatibilityWarning
     {
+        public string Severity;
+        public string Category;
+        public string Path;
+        public string Message;
+        [NonSerialized] public string Code;
+        [NonSerialized] public string Argument;
     }
 
     public sealed class MobileCompatibilityAnalyzer
@@ -62,6 +68,28 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
             }
         }
 
+        // Stable English text for the pre-PR Copy JSON contract, separate from UI translation.
+        private static string LegacyMessage(string code, string argument)
+        {
+            switch (code)
+            {
+                case "NonMobileShader": return $"Material uses non VRChat/Mobile shader: {argument}";
+                case "InstancingOff": return "GPU Instancing is OFF. This is a recommendation only; LiteKit will not modify the material.";
+                case "LightMobile": return "Lights are removed or unsupported on mobile avatars.";
+                case "CameraMobile": return "Cameras may be incompatible with mobile avatar targets.";
+                case "ClothMobile": return "Cloth is not supported for mobile avatar display.";
+                case "AudioMobile": return "Audio Sources are removed on mobile avatars.";
+                case "RigidbodyMobile": return "Physics Rigidbodies are limited on mobile avatars.";
+                case "ColliderMobile": return "Physics Colliders are limited on mobile avatars.";
+                case "JointMobile": return "Joints can be problematic for mobile avatars.";
+                case "ConstraintMobile": return "Unity constraints count toward constraint limits.";
+                case "ParticleMobile": return "Particle Systems are heavily limited on mobile avatars.";
+                case "TrailMobile": return "Trail Renderers are limited on mobile avatars.";
+                case "LineMobile": return "Line Renderers are limited on mobile avatars.";
+                default: return code;
+            }
+        }
+
         private static void Add(List<MobileCompatibilityWarning> warnings, string severity, string category, string path, string code, string argument = null)
         {
             warnings.Add(new MobileCompatibilityWarning
@@ -69,6 +97,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 Severity = severity,
                 Category = category,
                 Path = path,
+                Message = LegacyMessage(code, argument),
                 Code = code, Argument = argument
             });
         }

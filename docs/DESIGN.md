@@ -24,7 +24,7 @@ Editor / Runtime assemblyは各1つです。現在PackageとしてSDK / NDMFを�
 
 診断は元Assetを変更しません。非アクティブGameObjectや無効Componentも対象です。Texture参照はShaderUtilでTexture propertyを走査します。Texture memoryは概算であり、RankやMobile判定もSDK Validationの代替保証ではありません。
 
-Analyzer / Plannerの処理を言語別に二重実装しません。ユーザー向け表示と翻訳はLocalizationへ集約する方針です。Scanner / Mobile診断はコード・対象・Severityを保持し、UIとMarkdown表示時にLocalizationで翻訳します。JSONは診断コードを含むデータ出力です。ScannerWarningsは互換用の従来英語文字列配列を維持し、ScannerDiagnosticsを表示用の構造化データとして追加します。Markdownは一般Scanner警告とMobile警告を別セクションに出力します。
+Analyzer / Plannerの処理を言語別に二重実装しません。ユーザー向け表示と翻訳はLocalizationへ集約する方針です。Scanner / Mobile診断はコード・対象・Severityを保持し、UIとMarkdown表示時にLocalizationで翻訳します。Copy JSONはPR前mainの公開フィールドを維持します。ScannerWarningsは従来英語文字列配列、MobileWarningsはSeverity / Category / Path / Message（旧英語文面）です。ScannerDiagnostics、MobileのCode / Argument、stale状態、metric表示判断は内部情報としてNonSerializedにし、JSONへ追加しません。Markdownは一般Scanner警告とMobile警告を別セクションに出力します。
 
 ## Parameter Compressorの流れ
 
