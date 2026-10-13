@@ -70,7 +70,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Planner
             {
                 var metric = new MetricEvaluation
                 {
-                    Key = PerformanceMetricKey.Triangles,
+                    Key = PerformanceMetricKey.MeshReadWriteDisabled,
                     DisplayName = "Mesh Read/Write Disabled",
                     ValueText = "Detected",
                     EstimatedRank = PerformanceRank.VeryPoor,

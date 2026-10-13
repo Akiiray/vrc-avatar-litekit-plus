@@ -78,7 +78,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         {
             b.AppendLine(); b.AppendLine(ja ? "## Performance評価" : "## Performance Evaluations");
             foreach (var m in r.Evaluation.Metrics)
-                b.AppendLine($"- {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.DisplayName)}: {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.ValueText)} / {(ja ? "目標" : "target")} {m.TargetRank} <= {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.TargetText)} / {(ja ? "推定" : "estimated")} {m.EstimatedRank}{(m.Excess > 0 ? $", +{m.Excess:0.##}" : string.Empty)}");
+                b.AppendLine($"- {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.DisplayName)}: {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.ValueText)} / {(ja ? "目標" : "target")} {m.TargetRank}: {LiteKitLocalization.MetricTarget(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, r.TargetPlatform, m)} / {(ja ? "推定" : "estimated")} {m.EstimatedRank}{(m.Excess > 0 ? $", +{m.Excess:0.##}" : string.Empty)}");
         }
 
         private static void AppendRenderers(StringBuilder b, LiteKitReport r, bool ja)

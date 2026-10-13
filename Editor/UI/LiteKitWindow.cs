@@ -269,7 +269,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
             foreach (var metric in report.Evaluation.Metrics)
             {
                 EditorGUILayout.HelpBox(string.Format(T(LiteKitTextKey.PerformanceLine), LiteKitLocalization.Label(language, metric.DisplayName),
-                    LiteKitLocalization.Label(language, metric.ValueText), metric.TargetRank, LiteKitLocalization.Label(language, metric.TargetText), metric.EstimatedRank),
+                    LiteKitLocalization.Label(language, metric.ValueText), metric.TargetRank, LiteKitLocalization.MetricTarget(language, report.TargetPlatform, metric), metric.EstimatedRank),
                     metric.BlocksTarget ? MessageType.Warning : MessageType.None);
             }
             foreach (var warning in report.ScannerWarnings) EditorGUILayout.HelpBox(LiteKitLocalization.Diagnostic(language, warning), ToMessageType(warning.Severity));

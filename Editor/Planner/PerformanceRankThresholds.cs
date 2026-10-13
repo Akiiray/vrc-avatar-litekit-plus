@@ -47,7 +47,8 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Planner
         ClothVertexCount,
         PhysicsColliderCount,
         PhysicsRigidbodyCount,
-        AudioSourceCount
+        AudioSourceCount,
+        MeshReadWriteDisabled
     }
 
     public static class PerformanceRankThresholds
