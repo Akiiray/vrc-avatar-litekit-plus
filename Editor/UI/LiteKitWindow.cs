@@ -161,7 +161,9 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
                 GeneratedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), AvatarName = avatarRoot.name,
                 TargetPlatform = targetPlatform, TargetRank = targetRank, EstimatedRank = evaluation.EstimatedRank,
                 Stats = stats, Evaluation = evaluation, Renderers = renderers, Materials = materials, Textures = textures,
-                MobileWarnings = mobileWarnings, ScannerWarnings = new System.Collections.Generic.List<DiagnosticMessage>(context.Warnings),
+                MobileWarnings = mobileWarnings,
+                ScannerWarnings = context.Warnings.Select(AvatarScanner.LegacyWarning).ToList(),
+                ScannerDiagnostics = new System.Collections.Generic.List<DiagnosticMessage>(context.Warnings),
                 Notes = T(LiteKitTextKey.ReportNotes)
             };
             analysisState = mobileWarnings.Any(w => w.Severity == "Error") ? AnalysisState.Error
@@ -269,10 +271,10 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
             foreach (var metric in report.Evaluation.Metrics)
             {
                 EditorGUILayout.HelpBox(string.Format(T(LiteKitTextKey.PerformanceLine), LiteKitLocalization.Label(language, metric.DisplayName),
-                    LiteKitLocalization.Label(language, metric.ValueText), metric.TargetRank, LiteKitLocalization.MetricTarget(language, report.TargetPlatform, metric), metric.EstimatedRank),
+                    LiteKitLocalization.Label(language, metric.ValueText), metric.TargetRank, LiteKitLocalization.MetricTarget(language, metric), metric.EstimatedRank),
                     metric.BlocksTarget ? MessageType.Warning : MessageType.None);
             }
-            foreach (var warning in report.ScannerWarnings) EditorGUILayout.HelpBox(LiteKitLocalization.Diagnostic(language, warning), ToMessageType(warning.Severity));
+            foreach (var warning in report.ScannerDiagnostics) EditorGUILayout.HelpBox(LiteKitLocalization.Diagnostic(language, warning), ToMessageType(warning.Severity));
         }
 
         private void DrawRenderers()

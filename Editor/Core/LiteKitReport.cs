@@ -27,7 +27,9 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         public List<MaterialUsageInfo> Materials = new List<MaterialUsageInfo>();
         public List<TextureUsageInfo> Textures = new List<TextureUsageInfo>();
         public List<MobileCompatibilityWarning> MobileWarnings = new List<MobileCompatibilityWarning>();
-        public List<DiagnosticMessage> ScannerWarnings = new List<DiagnosticMessage>();
+        // Preserve the public JSON string-array contract and original English messages.
+        public List<string> ScannerWarnings = new List<string>();
+        public List<DiagnosticMessage> ScannerDiagnostics = new List<DiagnosticMessage>();
         public string Notes;
     }
 }

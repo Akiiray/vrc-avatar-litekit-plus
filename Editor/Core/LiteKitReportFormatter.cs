@@ -78,7 +78,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         {
             b.AppendLine(); b.AppendLine(ja ? "## Performance評価" : "## Performance Evaluations");
             foreach (var m in r.Evaluation.Metrics)
-                b.AppendLine($"- {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.DisplayName)}: {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.ValueText)} / {(ja ? "目標" : "target")} {m.TargetRank}: {LiteKitLocalization.MetricTarget(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, r.TargetPlatform, m)} / {(ja ? "推定" : "estimated")} {m.EstimatedRank}{(m.Excess > 0 ? $", +{m.Excess:0.##}" : string.Empty)}");
+                b.AppendLine($"- {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.DisplayName)}: {LiteKitLocalization.Label(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m.ValueText)} / {(ja ? "目標" : "target")} {m.TargetRank}: {LiteKitLocalization.MetricTarget(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, m)} / {(ja ? "推定" : "estimated")} {m.EstimatedRank}{(m.Excess > 0 ? $", +{m.Excess:0.##}" : string.Empty)}");
         }
 
         private static void AppendRenderers(StringBuilder b, LiteKitReport r, bool ja)
@@ -101,10 +101,12 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
 
         private static void AppendWarnings(StringBuilder b, LiteKitReport r, bool ja)
         {
-            b.AppendLine(); b.AppendLine(ja ? "## Mobile警告" : "## Mobile Warnings");
-            foreach (var x in r.MobileWarnings) b.AppendLine($"- [{LiteKitLocalization.Severity(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x.Severity)}] {x.Category} / {LiteKitLocalization.Diagnostic(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x)}");
-            foreach (var x in r.ScannerWarnings)
+            b.AppendLine(); b.AppendLine(ja ? "## Scanner警告" : "## Scanner Warnings");
+            foreach (var x in r.ScannerDiagnostics)
                 b.AppendLine($"- [{LiteKitLocalization.Severity(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x.Severity)}] {LiteKitLocalization.Diagnostic(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x)}");
+            b.AppendLine(); b.AppendLine(ja ? "## Mobile警告" : "## Mobile Warnings");
+            foreach (var x in r.MobileWarnings)
+                b.AppendLine($"- [{LiteKitLocalization.Severity(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x.Severity)}] {x.Category} / {LiteKitLocalization.Diagnostic(ja ? LiteKitLanguage.Japanese : LiteKitLanguage.English, x)}");
             b.AppendLine();
         }
 

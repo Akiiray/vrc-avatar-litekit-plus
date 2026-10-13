@@ -74,6 +74,17 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 warnings);
         }
 
+        // Legacy JSON projection is separate from localized UI presentation.
+        internal static string LegacyWarning(DiagnosticMessage diagnostic)
+        {
+            switch (diagnostic.Code)
+            {
+                case "MissingMaterial": return $"Renderer '{diagnostic.Path}' has a missing Material slot.";
+                case "MissingScript": return $"Missing script on '{diagnostic.Path}'.";
+                default: return diagnostic.Code;
+            }
+        }
+
         public static string GetPath(Transform transform)
         {
             if (transform == null)

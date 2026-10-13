@@ -168,13 +168,10 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Localization
         internal static string Label(LiteKitLanguage language, string value) =>
             language == LiteKitLanguage.Japanese && JapaneseLabels.TryGetValue(value ?? "", out var translated) ? translated : value;
 
-        // Threshold definitions identify numeric upper bounds without parsing display text.
-        // Boolean and other diagnostic conditions retain their localized wording.
-        internal static string MetricTarget(LiteKitLanguage language, LiteKitPlatform platform, MetricEvaluation metric)
+        internal static string MetricTarget(LiteKitLanguage language, MetricEvaluation metric)
         {
             var target = Label(language, metric.TargetText);
-            return PerformanceRankThresholds.TryGetNumericThresholds(platform, metric.Key, out _)
-                ? "≤ " + target : target;
+            return metric.UsesNumericUpperBound ? "≤ " + target : target;
         }
 
         internal static string Boolean(LiteKitLanguage language, bool value) => Label(language, value ? "True" : "False");
