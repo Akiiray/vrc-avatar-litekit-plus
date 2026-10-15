@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
@@ -52,6 +53,22 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
             window.Repaint();
         }
 
+        private bool HasCurrentReport => report != null && report.Matches(avatarRoot, targetPlatform, targetRank);
+
+        private static GameObject ResolveAvatar(GameObject selected)
+        {
+            var descriptor = selected != null ? selected.GetComponentInParent<VRCAvatarDescriptor>(true) : null;
+            return descriptor != null ? descriptor.gameObject : selected;
+        }
+
+        private void UpdateReportValidity()
+        {
+            if (report != null && !report.Matches(avatarRoot, targetPlatform, targetRank)) report.IsStale = true;
+        }
+
+        private static MessageType ToMessageType(string severity) =>
+            severity == "Error" ? MessageType.Error : severity == "Warning" ? MessageType.Warning : MessageType.Info;
+
         private string T(LiteKitTextKey key) => LiteKitLocalization.Get(language, key);
 
         private void OnEnable()
@@ -68,8 +85,9 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
             EditorGUILayout.HelpBox(T(LiteKitTextKey.DryRunNotice), MessageType.Info);
             EditorGUILayout.Space();
             DrawTargetSection();
+            UpdateReportValidity();
             DrawStatusSection();
-            if (report != null)
+            if (HasCurrentReport)
             {
                 DrawSummarySection();
                 DrawParameterSection();
@@ -83,13 +101,14 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
             using (new EditorGUILayout.VerticalScope("box"))
             {
                 EditorGUILayout.LabelField(T(LiteKitTextKey.TargetSection), EditorStyles.boldLabel);
-                avatarRoot = (GameObject)EditorGUILayout.ObjectField(T(LiteKitTextKey.TargetAvatar), avatarRoot, typeof(GameObject), true);
+                avatarRoot = ResolveAvatar((GameObject)EditorGUILayout.ObjectField(T(LiteKitTextKey.TargetAvatar), avatarRoot, typeof(GameObject), true));
                 if (GUILayout.Button(T(LiteKitTextKey.UseHierarchySelection))) UseHierarchySelection();
                 targetPlatform = (LiteKitPlatform)EditorGUILayout.EnumPopup(T(LiteKitTextKey.TargetPlatform), targetPlatform);
                 var index = Mathf.Clamp(Array.IndexOf(TargetRankValues, targetRank), 0, TargetRankValues.Length - 1);
                 index = EditorGUILayout.Popup(T(LiteKitTextKey.TargetRank), index, GetTargetRankLabels());
                 targetRank = TargetRankValues[index];
                 EditorGUILayout.Space(3f);
+                UpdateReportValidity();
                 if (GUILayout.Button(T(LiteKitTextKey.AnalyzeAvatar), GUILayout.Height(34f))) AnalyzeAvatar();
                 if (avatarRoot == null) EditorGUILayout.HelpBox(T(LiteKitTextKey.NoAvatarSelected), MessageType.Warning);
             }
@@ -97,15 +116,14 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
 
         private string[] GetTargetRankLabels()
         {
-            var suffix = language == LiteKitLanguage.Japanese ? "以上" : " or better";
+            var suffix = T(LiteKitTextKey.RankSuffix);
             return new[] { "Excellent" + suffix, "Good" + suffix, "Medium" + suffix, "Poor" + suffix };
         }
 
         private void UseHierarchySelection()
         {
             var selected = Selection.activeGameObject;
-            var descriptor = selected != null ? selected.GetComponentInParent<VRCAvatarDescriptor>(true) : null;
-            avatarRoot = descriptor != null ? descriptor.gameObject : selected;
+            avatarRoot = ResolveAvatar(selected);
             if (avatarRoot == null) analysisState = AnalysisState.Error;
         }
 
@@ -119,9 +137,10 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
                 return;
             }
 
-            var descriptor = avatarRoot.GetComponentInParent<VRCAvatarDescriptor>(true);
-            if (descriptor != null) avatarRoot = descriptor.gameObject;
-            LiteKitLogger.Info($"Analyze started: {avatarRoot.name}");
+            avatarRoot = ResolveAvatar(avatarRoot);
+            report = null;
+            analysisState = AnalysisState.Error;
+            LiteKitLogger.Info(string.Format(T(LiteKitTextKey.AnalysisStarted), avatarRoot.name));
             var context = AvatarScanner.Scan(avatarRoot);
             if (context == null || !context.IsValid)
             {
@@ -138,17 +157,19 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
             var mobileWarnings = new MobileCompatibilityAnalyzer().Analyze(context, materials);
             report = new LiteKitReport
             {
+                AnalyzedAvatar = context.AvatarRoot, AnalysisCompleted = true,
                 GeneratedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), AvatarName = avatarRoot.name,
                 TargetPlatform = targetPlatform, TargetRank = targetRank, EstimatedRank = evaluation.EstimatedRank,
                 Stats = stats, Evaluation = evaluation, Renderers = renderers, Materials = materials, Textures = textures,
-                MobileWarnings = mobileWarnings, ScannerWarnings = new System.Collections.Generic.List<string>(context.Warnings),
-                Notes = language == LiteKitLanguage.Japanese
-                    ? "非破壊のDry Runレポートです。元のMaterial、Texture、Mesh、Prefab、Avatar Assetは変更していません。"
-                    : "This is a non-destructive Dry Run report. No original Material, Texture, Mesh, Prefab, or Avatar asset was modified."
+                MobileWarnings = mobileWarnings,
+                ScannerWarnings = new System.Collections.Generic.List<string>(context.Warnings),
+                ScannerDiagnostics = new System.Collections.Generic.List<DiagnosticMessage>(context.Diagnostics),
+                Notes = T(LiteKitTextKey.ReportNotes)
             };
-            analysisState = mobileWarnings.Count > 0 || context.Warnings.Count > 0 || evaluation.TargetPlan.BlockingMetrics.Count > 0
-                ? AnalysisState.Warning : AnalysisState.Success;
-            LiteKitLogger.Info($"Analyze completed: {avatarRoot.name}; Estimated Rank: {evaluation.EstimatedRank}");
+            analysisState = mobileWarnings.Any(w => w.Severity == "Error") ? AnalysisState.Error
+                : mobileWarnings.Any(w => w.Severity == "Warning") || context.Diagnostics.Count > 0 || evaluation.TargetPlan.BlockingMetrics.Count > 0
+                    ? AnalysisState.Warning : AnalysisState.Success;
+            LiteKitLogger.Info(string.Format(T(LiteKitTextKey.AnalysisCompleted), avatarRoot.name, evaluation.EstimatedRank));
         }
 
         private void DrawStatusSection()
@@ -158,11 +179,13 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
                 EditorGUILayout.LabelField(T(LiteKitTextKey.AnalysisStatus), EditorStyles.boldLabel);
                 EditorGUILayout.LabelField(T(LiteKitTextKey.Status), GetStatusText());
                 EditorGUILayout.LabelField(T(LiteKitTextKey.AvatarName), avatarRoot != null ? avatarRoot.name : "—");
+                if (report != null && report.IsStale) EditorGUILayout.HelpBox(T(LiteKitTextKey.Stale), MessageType.Info);
             }
         }
 
         private string GetStatusText()
         {
+            if (report != null && report.IsStale) return T(LiteKitTextKey.Stale);
             switch (analysisState)
             {
                 case AnalysisState.Success: return T(LiteKitTextKey.Completed);
@@ -247,11 +270,11 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
         {
             foreach (var metric in report.Evaluation.Metrics)
             {
-                var targetWord = language == LiteKitLanguage.Japanese ? "目標" : "target";
-                var estimatedWord = language == LiteKitLanguage.Japanese ? "推定" : "estimated";
-                EditorGUILayout.HelpBox($"{metric.DisplayName}: {metric.ValueText}\n{targetWord} {metric.TargetRank}: {metric.TargetText}以下 / {estimatedWord} {metric.EstimatedRank}", metric.BlocksTarget ? MessageType.Warning : MessageType.None);
+                EditorGUILayout.HelpBox(string.Format(T(LiteKitTextKey.PerformanceLine), LiteKitLocalization.Label(language, metric.DisplayName),
+                    LiteKitLocalization.Label(language, metric.ValueText), metric.TargetRank, LiteKitLocalization.MetricTarget(language, metric, report.TargetPlatform), metric.EstimatedRank),
+                    metric.BlocksTarget ? MessageType.Warning : MessageType.None);
             }
-            foreach (var warning in report.ScannerWarnings) EditorGUILayout.HelpBox(warning, MessageType.Warning);
+            foreach (var warning in report.ScannerDiagnostics) EditorGUILayout.HelpBox(LiteKitLocalization.Diagnostic(language, warning), ToMessageType(warning.Severity));
         }
 
         private void DrawRenderers()
@@ -261,8 +284,8 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
                 {
                     EditorGUILayout.LabelField(item.Path, EditorStyles.boldLabel);
                     EditorGUILayout.LabelField($"{T(LiteKitTextKey.Type)}: {item.RendererType}    {T(LiteKitTextKey.Mesh)}: {item.MeshName}");
-                    EditorGUILayout.LabelField($"Triangles: {item.TriangleCount:N0}    {T(LiteKitTextKey.MaterialSlots)}: {item.MaterialSlotCount}");
-                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.EnabledLabel)}: {item.Enabled}    {T(LiteKitTextKey.Active)}: {item.GameObjectActiveInHierarchy}    {T(LiteKitTextKey.BlendShapes)}: {item.BlendShapeCount}    {T(LiteKitTextKey.Bones)}: {item.BoneCount}");
+                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.Triangles)}: {item.TriangleCount:N0}    {T(LiteKitTextKey.MaterialSlots)}: {item.MaterialSlotCount}");
+                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.EnabledLabel)}: {LiteKitLocalization.Boolean(language, item.Enabled)}    {T(LiteKitTextKey.Active)}: {LiteKitLocalization.Boolean(language, item.GameObjectActiveInHierarchy)}    {T(LiteKitTextKey.BlendShapes)}: {item.BlendShapeCount}    {T(LiteKitTextKey.Bones)}: {item.BoneCount}");
                 }
         }
 
@@ -274,8 +297,8 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
                 {
                     EditorGUILayout.LabelField(item.Name, EditorStyles.boldLabel);
                     EditorGUILayout.LabelField($"{T(LiteKitTextKey.Shader)}: {item.ShaderName}");
-                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.MaterialSlots)}: {item.SlotCount}    {T(LiteKitTextKey.Instancing)}: {item.EnableGpuInstancing}");
-                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.MobileShader)}: {item.UsesMobileShader}    {T(LiteKitTextKey.SameNameCandidates)}: {item.HasSameNameCandidates}");
+                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.MaterialSlots)}: {item.SlotCount}    {T(LiteKitTextKey.Instancing)}: {LiteKitLocalization.Boolean(language, item.EnableGpuInstancing)}");
+                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.MobileShader)}: {LiteKitLocalization.Boolean(language, item.UsesMobileShader)}    {T(LiteKitTextKey.SameNameCandidates)}: {LiteKitLocalization.Boolean(language, item.HasSameNameCandidates)}");
                 }
         }
 
@@ -286,9 +309,9 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
                 {
                     EditorGUILayout.LabelField(item.Name, EditorStyles.boldLabel);
                     EditorGUILayout.LabelField($"{T(LiteKitTextKey.Resolution)}: {item.Width}x{item.Height}    {T(LiteKitTextKey.TextureType)}: {item.TextureType}");
-                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.Mipmap)}: {item.HasMipMap}    {T(LiteKitTextKey.TextureMemory)}: {LiteKitReportFormatter.FormatBytes(item.EstimatedMemoryBytes)}");
+                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.Mipmap)}: {LiteKitLocalization.Boolean(language, item.HasMipMap)}    {T(LiteKitTextKey.TextureMemory)}: {LiteKitReportFormatter.FormatBytes(item.EstimatedMemoryBytes)}");
                     EditorGUILayout.LabelField($"Importer: {item.ImporterTextureType}    {T(LiteKitTextKey.ImporterMaxSize)}: {item.ImporterMaxSize}");
-                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.AndroidOverride)}: {item.AndroidOverride}    {T(LiteKitTextKey.IosOverride)}: {item.IosOverride}");
+                    EditorGUILayout.LabelField($"{T(LiteKitTextKey.AndroidOverride)}: {LiteKitLocalization.Boolean(language, item.AndroidOverride)}    {T(LiteKitTextKey.IosOverride)}: {LiteKitLocalization.Boolean(language, item.IosOverride)}");
                 }
         }
 
@@ -296,7 +319,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.UI
         {
             EditorGUILayout.HelpBox(T(LiteKitTextKey.MobileNotice), MessageType.Info);
             foreach (var warning in report.MobileWarnings)
-                EditorGUILayout.HelpBox($"[{warning.Category}] {warning.Path}: {warning.Message}", MessageType.Warning);
+                EditorGUILayout.HelpBox($"[{warning.Category}] {LiteKitLocalization.Diagnostic(language, warning)}", ToMessageType(warning.Severity));
         }
 
         private void DrawRawReport()

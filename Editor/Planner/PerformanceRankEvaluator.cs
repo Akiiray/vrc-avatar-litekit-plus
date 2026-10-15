@@ -7,6 +7,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Planner
     [Serializable]
     public sealed class MetricEvaluation
     {
+        [NonSerialized] public bool UsesNumericUpperBound;
         public PerformanceMetricKey Key;
         public string DisplayName;
         public string ValueText;
@@ -99,6 +100,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Planner
             var excess = Math.Max(0, value - targetThreshold);
             var metric = new MetricEvaluation
             {
+                UsesNumericUpperBound = true,
                 Key = key,
                 DisplayName = displayName,
                 NumericValue = value,

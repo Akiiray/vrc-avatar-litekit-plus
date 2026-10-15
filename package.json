@@ -4,10 +4,6 @@
   "version": "0.2.0",
   "unity": "2022.3",
   "description": "VRChat avatar diagnostics, parameter compression, and mobile conversion toolkit.",
-  "dependencies": {
-    "com.vrchat.avatars": "3.7.0",
-    "nadena.dev.ndmf": "1.5.0"
-  },
   "author": {
     "name": "akiiray"
   },
@@ -19,5 +15,9 @@
     "mobile",
     "vpm"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "vpmDependencies": {
+    "com.vrchat.avatars": "3.7.0",
+    "nadena.dev.ndmf": ">=1.6.0"
+  }
 }

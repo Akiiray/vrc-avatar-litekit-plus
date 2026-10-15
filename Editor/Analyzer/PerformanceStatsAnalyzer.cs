@@ -76,7 +76,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
             }
 
             // TODO(v0.2+): Add SDK-backed PhysBone, Contact, VRCRaycast, and VRC Constraint counts
-            // after introducing explicit VRChat SDK dependency and avoiding SDK Build API calls.
+            // using the existing SDK dependency after validating metric semantics; do not call SDK Build APIs.
             return stats;
         }
 

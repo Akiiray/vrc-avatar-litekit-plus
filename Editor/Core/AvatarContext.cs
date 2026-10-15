@@ -9,6 +9,16 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
     /// All collections are gathered with inactive GameObjects included because VRChat's
     /// Performance Rank counts disabled GameObjects and disabled Components.
     /// </summary>
+    [System.Serializable]
+    public class DiagnosticMessage
+    {
+        public string Code;
+        public string Argument;
+        public string Severity;
+        public string Category;
+        public string Path;
+    }
+
     public sealed class AvatarContext
     {
         public AvatarContext(
@@ -45,6 +55,30 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
             LineRenderers = lineRenderers;
             Cloths = cloths;
             Warnings = warnings;
+            Diagnostics = System.Array.Empty<DiagnosticMessage>();
+        }
+
+        internal AvatarContext(
+            GameObject avatarRoot,
+            IReadOnlyList<Transform> allTransforms,
+            IReadOnlyList<Renderer> renderers,
+            IReadOnlyList<SkinnedMeshRenderer> skinnedMeshRenderers,
+            IReadOnlyList<MeshRenderer> meshRenderers,
+            IReadOnlyList<MeshFilter> meshFilters,
+            IReadOnlyList<Material> materials,
+            IReadOnlyList<UnityTexture> textures,
+            IReadOnlyList<Animator> animators,
+            IReadOnlyList<ParticleSystem> particleSystems,
+            IReadOnlyList<Light> lights,
+            IReadOnlyList<AudioSource> audioSources,
+            IReadOnlyList<TrailRenderer> trailRenderers,
+            IReadOnlyList<LineRenderer> lineRenderers,
+            IReadOnlyList<Cloth> cloths,
+            IReadOnlyList<string> warnings,
+            IReadOnlyList<DiagnosticMessage> diagnostics)
+            : this(avatarRoot, allTransforms, renderers, skinnedMeshRenderers, meshRenderers, meshFilters, materials, textures, animators, particleSystems, lights, audioSources, trailRenderers, lineRenderers, cloths, warnings)
+        {
+            Diagnostics = diagnostics ?? System.Array.Empty<DiagnosticMessage>();
         }
 
         public GameObject AvatarRoot { get; }
@@ -63,6 +97,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Core
         public IReadOnlyList<LineRenderer> LineRenderers { get; }
         public IReadOnlyList<Cloth> Cloths { get; }
         public IReadOnlyList<string> Warnings { get; }
+        public IReadOnlyList<DiagnosticMessage> Diagnostics { get; }
         public bool IsValid => AvatarRoot != null;
     }
 }

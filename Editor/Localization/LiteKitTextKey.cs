@@ -12,6 +12,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Localization
         Generated, Platform, SkinnedMeshes, MeshRenderers, MaterialSlots, UniqueMaterials,
         UniqueTextures, Path, Type, Mesh, EnabledLabel, Active, BlendShapes, Bones,
         Shader, Instancing, MobileShader, SameNameCandidates, Resolution, Mipmap,
-        TextureType, ImporterMaxSize, AndroidOverride, IosOverride, Copied
+        TextureType, ImporterMaxSize, AndroidOverride, IosOverride, Copied, Stale, AnalysisStarted, AnalysisCompleted, ReportNotes, PerformanceLine, RankSuffix,
+        CompressionNotice, EnableCompression, SyncChannelCount, ChannelNotice, DescriptorRequired, Parameters, Rescan, CompressionPreview, CompressionTargets, NoCompressionTargets, CompressionBefore, CompressionAfter, CompressionSaved, CompressionBatches, CompressionCycle, NoSavings, BatchLimit, HighLatency, ChannelLatencyHint, SavedParameterNotice, ParameterBudget, FinalBudget, BudgetExceeded, BudgetLegend, Synced, LocalParameter, Saved, NotSaved, Excluded, Included, MenuBuilderNotice, VrcFuryNotice, FaceTrackingNotice, ReportTitle, ReportMetadata, ReportDisclaimer, ReportSummary, ReportPerformance, ReportRenderers, ReportMaterials, ReportTextures, ReportScanner, ReportMobile, ReportNotesHeader, ReportSummaryLine, ReportMetric, ReportRenderer, ReportMaterial, ReportTexture
     }
 }

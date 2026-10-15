@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
+using Akiiray.VRCAvatarLiteKitPlus.Editor.Localization;
 using UnityEngine;
 using UnityTexture = UnityEngine.Texture;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Core;
@@ -13,11 +15,11 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
         {
             if (avatarRoot == null)
             {
-                LiteKitLogger.Warning("Avatar Root is not selected. Select an avatar root or assign one in the LiteKit window.");
+                LiteKitLogger.Warning(LiteKitLocalization.Get(LiteKitLocalization.CurrentLanguage, LiteKitTextKey.NoAvatarSelected));
                 return null;
             }
 
-            var warnings = new List<string>();
+            var warnings = new List<DiagnosticMessage>();
             var renderers = GetComponents<Renderer>(avatarRoot);
             var materials = new HashSet<Material>();
             var textures = new HashSet<UnityTexture>();
@@ -28,7 +30,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 {
                     if (material == null)
                     {
-                        warnings.Add($"Renderer '{GetPath(renderer.transform)}' has a missing Material slot.");
+                        warnings.Add(new DiagnosticMessage { Code = "MissingMaterial", Path = GetPath(renderer.transform), Severity = "Warning" });
                         continue;
                     }
 
@@ -44,14 +46,14 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 {
                     if (components[i] == null)
                     {
-                        warnings.Add($"Missing script on '{GetPath(transform)}'.");
+                        warnings.Add(new DiagnosticMessage { Code = "MissingScript", Path = GetPath(transform), Severity = "Warning" });
                     }
                 }
             }
 
             foreach (var warning in warnings)
             {
-                LiteKitLogger.Warning(warning);
+                LiteKitLogger.Warning(LiteKitLocalization.Diagnostic(LiteKitLocalization.CurrentLanguage, warning));
             }
 
             return new AvatarContext(
@@ -70,7 +72,19 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Analyzer
                 GetComponents<TrailRenderer>(avatarRoot),
                 GetComponents<LineRenderer>(avatarRoot),
                 GetComponents<Cloth>(avatarRoot),
+                warnings.Select(LegacyWarning).ToList(),
                 warnings);
+        }
+
+        // Legacy JSON projection is separate from localized UI presentation.
+        internal static string LegacyWarning(DiagnosticMessage diagnostic)
+        {
+            switch (diagnostic.Code)
+            {
+                case "MissingMaterial": return $"Renderer '{diagnostic.Path}' has a missing Material slot.";
+                case "MissingScript": return $"Missing script on '{diagnostic.Path}'.";
+                default: return diagnostic.Code;
+            }
         }
 
         public static string GetPath(Transform transform)
