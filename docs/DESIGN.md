@@ -12,7 +12,7 @@ LiteKitは診断・計画と、明示的に有効化された非破壊Build-time
 | Localization | 日本語 / Englishの表示切替。両Windowは同じ診断・計画処理を使う |
 | Mobile diagnostics | Shader名等に基づく簡易診断。Material変換やComponent削除はしない |
 | Runtime Component | Avatar Rootに設定するLiteKitParameterCompressor。IEditorOnlyであり、ゲーム内実行ロジックではない |
-| Parameter Compression | Parameter走査、除外、決定的な計画、Inspector Preview、Encoder / Decoder生成 |
+| Parameter Compression | Parameter走査、除外、決定的な計画、Inspector Preview、ビルドと共通の事前検証、Encoder / Decoder生成 |
 | NDMF integration | Editor/ParameterCompressionのPluginがOptimizing Phaseに参加 |
 | 将来拡張 | UV / Mesh / Texture最適化等のPlaceholder。実変換とは区別する |
 
@@ -28,7 +28,7 @@ Analyzer / Plannerの処理を言語別に二重実装しません。ユーザ�
 
 ## Parameter Compressorの流れ
 
-Avatar RootのRuntime Component → Inspectorで現在のExpression Parameters / FXを走査しPreview → 通常Build → NDMF Optimizing → Build時構成の再走査・計画 → cloneのExpression Parameters / FX Controllerを明示的に複製 → 変換・生成 → NDMF AssetSaver。
+Avatar RootのRuntime Component → Inspectorで現在のExpression Parameters / FXを走査しPreview → 通常Build → NDMF Optimizing → Build時構成の再走査・計画・検証 → Expression Parameters / FX Controllerを複製 → 変換・生成 → NDMF AssetSaver → Build cloneのDescriptor参照を切り替え。
 
 Componentの有効化初期値はtrueです。追加した時点でBuild時変換が有効になります。Inspector Previewは元Assetを変更する適用操作でも、実BuildのDry Runでもありません。前段Pluginによる変更後のBuild構成を正とします。
 
@@ -40,12 +40,16 @@ Componentの有効化初期値はtrueです。追加した時点でBuild時変�
 
 Texture Atlas、UV変更、Mesh結合、ポリゴン削減、Material統合、Shader自動変換、Avatar Exporterは未実装です。NDMF一般Placeholderはこれらの将来設計の置き場であり、Compressor未実装を意味しません。
 
+## Parameter Compressorの実装・検証状況
+
+- **実装済み**　予約Parameter名・同名Animator Layer、対象とIsLocalの型不一致・重複、タイミングパス、同期予算を事前検証します。エラー時は生成前に停止し、正常時は保存後にBuild cloneの参照を切り替えます。
+- **NDMF AvatarProcessorで検証済み**　Float / Int / 混在、衝突停止、元Assetが変わらないこと、生成LayerとDriverの対応を確認しました。
+- **SDK BuilderのBuild専用APIで検証済み**　正常圧縮と対象なしのBundle生成、予約名と同名LayerでのBuild停止を確認しました。
+- **未検証**　SDK Control Panelの画面操作、実機同期、PC / Android / iOS間の同期、VRCFury等との併用、宣言下限Versionでのビルド。再現と実測の詳細は[検証記録](PARAMETER_COMPRESSION_TESTING.md)を参照してください。
+
 ## 現行の制限と後続検証
 
 - VRCFuryの確実なPlugin orderingは未確定です。推測でorderingを指定しません。
-- Inspector PreviewはDescriptorのExpression Parameters / FX AnimatorControllerを取得元として説明します。NDMF ParameterInfoを使用するという説明はしません。
-- Component追加時ONという現行挙動と、追加後ONを求める既存案内の差異は後続の仕様・文言整理候補です。
-- 予約Parameter / Layer名の衝突、既存Animatorの型一致、clone参照の安全性、実ネットワーク同期は個別検証が必要です。
 - Reportは診断対象Avatar参照・診断完了状態・Platform・目標Rankを保持します。対象または条件変更でstaleになり、再診断までサマリー・詳細・コピーを表示しません。言語・Foldout変更ではstaleにしません。
 - Avatar内部の編集や外部Asset変更を自動検出する仕組みはありません。編集後は再診断してください。
 - Severityに従ってInfo / Warning / Errorを表示し、Infoだけでは診断状態を警告にしません。

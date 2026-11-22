@@ -76,6 +76,4 @@ Modular Avatarは任意です。参照環境のMAではリネーム・Animator�
 
 ## Issue #12 の検証
 
-Unity 2022.3.22f1、VRChat SDK 3.10.6、NDMF 1.15.1の一時プロジェクトで、Prefabから作成したクローンに対しNDMFのAvatarProcessorを実行しました。Float、Int、混在、対象なし、1項目、無効、Kの上限、Index 255と超過、256bit予算超過、既存予約名（同型・異型を含む）、対象・IsLocalの型不一致、同名Layer、タイミングパス、Expression重複、Contact、カスタムビット幅を検証しました。混在ケースでは同じPrefabから2回処理し、生成Layerが各クローンに1本だけであることを確認しました。元Prefab・FX・Expression Parametersのファイル内容と、元FX・Expression Parametersの読み込み済みデータを照合しました。各BatchのEncoder・DecoderのCopy対応と、EncoderでIndexのSetが最後であることも確認しました。
-
-VRChat SDK Builderを通したBuild、VRChat実機上の同期、PC・Android・iOS間の受信、他の最適化Pluginと併用したBuild、宣言下限Versionでの実Buildは未検証です。
+検証環境、NDMF AvatarProcessorの21ケース、SDK Builderの結果および未検証項目は[検証記録](PARAMETER_COMPRESSION_TESTING.md)を参照してください。
