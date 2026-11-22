@@ -9,9 +9,11 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
         internal VRCExpressionParameters.ValueType Type;
         internal bool NetworkSynced;
         internal bool Saved;
+        internal bool IsTrigger;
+        internal bool ContactDriven;
         internal float DefaultValue;
         internal string Source;
         internal Object SourceObject;
-        internal int BitCost => Type == VRCExpressionParameters.ValueType.Bool ? 1 : 8;
+        internal int BitCost;
     }
 }

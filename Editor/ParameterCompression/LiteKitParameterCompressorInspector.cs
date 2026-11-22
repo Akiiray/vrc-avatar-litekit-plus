@@ -4,7 +4,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
-using VRC.SDK3.Avatars.ScriptableObjects;
 using Akiiray.VRCAvatarLiteKitPlus.Editor.Localization;
 
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
@@ -16,6 +15,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
         private List<ScannedParameter> scanned = new List<ScannedParameter>();
         private readonly Dictionary<string, bool> sourceFoldouts = new Dictionary<string, bool>();
         private VRCAvatarDescriptor descriptor;
+        private bool generatedFoldout;
         private SerializedProperty enableCompression;
         private SerializedProperty syncChannelCount;
         private SerializedProperty excludedParameters;
@@ -38,57 +38,72 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             var excluded = ReadExcluded();
             var provisional = CompressionPlan.Create(scanned, excluded, 1);
             var sliderMax = Math.Max(1, provisional.MaxUsefulChannelCount);
-            syncChannelCount.intValue = EditorGUILayout.IntSlider(new GUIContent(T(LiteKitTextKey.SyncChannelCount)),
+            EditorGUI.BeginChangeCheck();
+            var channels = EditorGUILayout.IntSlider(new GUIContent(T(LiteKitTextKey.SyncChannelCount)),
                 Mathf.Clamp(syncChannelCount.intValue, 1, sliderMax), 1, sliderMax);
+            if (EditorGUI.EndChangeCheck()) syncChannelCount.intValue = channels;
             EditorGUILayout.HelpBox(T(LiteKitTextKey.ChannelNotice), MessageType.None);
             serializedObject.ApplyModifiedProperties();
 
-            if (descriptor == null)
-                EditorGUILayout.HelpBox(T(LiteKitTextKey.DescriptorRequired), MessageType.Error);
-
+            var plan = CompressionPlan.Create(scanned, excluded, syncChannelCount.intValue);
             DrawCompatibilityMessages();
-            DrawPreview(CompressionPlan.Create(scanned, ReadExcluded(), syncChannelCount.intValue));
+            DrawPreview(plan, CompressionValidation.Check(descriptor, plan, enableCompression.boolValue));
+            EditorGUILayout.HelpBox(T(LiteKitTextKey.CompressionExternalNotice), MessageType.Info);
 
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(T(LiteKitTextKey.Parameters), EditorStyles.boldLabel);
             if (GUILayout.Button(T(LiteKitTextKey.Rescan), GUILayout.Width(90))) Rescan();
             EditorGUILayout.EndHorizontal();
-            DrawParameterList();
+            DrawParameterList(excluded);
             EditorGUILayout.HelpBox(LiteKitLocalization.Get(LiteKitLocalization.CurrentLanguage, LiteKitTextKey.PreviewDisclaimer), MessageType.Info);
         }
 
-        private void DrawPreview(CompressionPlan plan)
+        private void DrawPreview(CompressionPlan plan, CompressionValidation validation)
         {
             EditorGUILayout.Space();
             EditorGUILayout.LabelField(T(LiteKitTextKey.CompressionPreview), EditorStyles.boldLabel);
-            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionTargets), plan.FloatCount, plan.IntCount, plan.Targets.Count));
+            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionTargetSummary),
+                plan.FloatCount, plan.IntCount, scanned.Count - plan.Targets.Count));
+            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionBefore), validation.OriginalBits));
+            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionAfter), validation.FinalBits));
+            var savings = validation.OriginalBits - validation.FinalBits;
+            var percent = validation.OriginalBits == 0 ? 0f : savings * 100f / validation.OriginalBits;
+            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionSaved), savings, percent));
+            foreach (var error in validation.Errors) EditorGUILayout.HelpBox(error, MessageType.Error);
+
+            if (!enableCompression.boolValue) return;
             if (plan.Targets.Count == 0)
-            {
                 EditorGUILayout.HelpBox(T(LiteKitTextKey.NoCompressionTargets), MessageType.Info);
-                return;
-            }
-            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionBefore), plan.OriginalBits));
-            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionAfter), plan.CompressedBits));
-            var percent = plan.OriginalBits == 0 ? 0f : plan.SavedBits * 100f / plan.OriginalBits;
-            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionSaved), plan.SavedBits, percent));
-            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionBatches), plan.EffectiveChannelCount, plan.Batches.Count));
+            else if (plan.SavedBits <= 0)
+                EditorGUILayout.HelpBox(T(LiteKitTextKey.NoSavings), MessageType.Warning);
+            if (!plan.IsUseful) return;
+
+            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionChannelSummary),
+                plan.FloatChannelCount, plan.IntChannelCount, plan.Batches.Count));
             EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionCycle), plan.CycleSeconds));
-            if (plan.SavedBits <= 0) EditorGUILayout.HelpBox(T(LiteKitTextKey.NoSavings), MessageType.Warning);
-            if (plan.Batches.Count > CompressionConstants.MaximumBatchIndex)
-                EditorGUILayout.HelpBox(T(LiteKitTextKey.BatchLimit), MessageType.Error);
             if (plan.CycleSeconds > 3f) EditorGUILayout.HelpBox(T(LiteKitTextKey.HighLatency), MessageType.Warning);
             else if (plan.CycleSeconds > 1f) EditorGUILayout.HelpBox(T(LiteKitTextKey.ChannelLatencyHint), MessageType.Info);
             if (plan.Targets.Any(p => p.Saved)) EditorGUILayout.HelpBox(T(LiteKitTextKey.SavedParameterNotice), MessageType.Info);
 
-            var currentBits = scanned.Where(p => p.NetworkSynced).Sum(p => p.BitCost);
-            var finalBits = Math.Max(0, currentBits - plan.OriginalBits + plan.CompressedBits);
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField(T(LiteKitTextKey.ParameterBudget), EditorStyles.boldLabel);
-            DrawBudgetBar(finalBits, plan.CompressedBits);
-            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.FinalBudget), finalBits, plan.SavedBits));
-            if (finalBits > CompressionConstants.ParameterBudgetBits)
-                EditorGUILayout.HelpBox(T(LiteKitTextKey.BudgetExceeded), MessageType.Error);
+            DrawBudgetBar(validation.FinalBits, plan.CompressedBits);
+            generatedFoldout = EditorGUILayout.Foldout(generatedFoldout, T(LiteKitTextKey.CompressionGeneratedPreview), true);
+            if (!generatedFoldout) return;
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionGeneratedLayer), CompressionConstants.LayerName));
+            foreach (var parameter in plan.GetSyncParameters())
+                EditorGUILayout.LabelField($"{parameter.Name}  [{parameter.Type}]");
+
+            var fx = ParameterScanner.GetFxController(descriptor);
+            if (fx != null)
+            {
+                var existing = new HashSet<string>(fx.parameters.Select(parameter => parameter.name));
+                foreach (var parameter in plan.GetRequiredAnimatorParameters())
+                    if (!existing.Contains(parameter.Name))
+                        EditorGUILayout.LabelField(string.Format(T(LiteKitTextKey.CompressionGeneratedFxParameter),
+                            parameter.Name, parameter.Type));
+            }
+            EditorGUI.indentLevel--;
         }
 
         private static void DrawBudgetBar(int finalBits, int channelBits)
@@ -103,7 +118,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             GUI.Label(rect, T(LiteKitTextKey.BudgetLegend), EditorStyles.miniLabel);
         }
 
-        private void DrawParameterList()
+        private void DrawParameterList(HashSet<string> excludedNames)
         {
             foreach (var group in scanned.GroupBy(p => p.Source))
             {
@@ -114,15 +129,19 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
                 foreach (var p in group)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField($"{p.Name}  [{p.Type} / {p.BitCost}bit / {(p.NetworkSynced ? T(LiteKitTextKey.Synced) : T(LiteKitTextKey.LocalParameter))} / {(p.Saved ? T(LiteKitTextKey.Saved) : T(LiteKitTextKey.NotSaved))}]", EditorStyles.miniLabel);
-                    var eligible = p.NetworkSynced && p.Type != VRCExpressionParameters.ValueType.Bool &&
-                                   !ParameterExclusionRules.IsAutomaticallyExcluded(p.Name, null);
-                    using (new EditorGUI.DisabledScope(!eligible))
+                    var type = p.IsTrigger ? "Trigger" : p.Type.ToString();
+                    EditorGUILayout.LabelField($"{p.Name}  [{type} / {p.BitCost} bit / {(p.NetworkSynced ? T(LiteKitTextKey.Synced) : T(LiteKitTextKey.LocalParameter))} / {(p.Saved ? T(LiteKitTextKey.Saved) : T(LiteKitTextKey.NotSaved))}]", EditorStyles.miniLabel);
+                    var reason = ParameterExclusionRules.GetExclusion(p, excludedNames);
+                    if (reason != null && reason != LiteKitTextKey.CompressionExcludedManual)
                     {
-                        var excluded = ContainsExcluded(p.Name);
-                        var nextExcluded = GUILayout.Toggle(excluded, excluded ? T(LiteKitTextKey.Excluded) : T(LiteKitTextKey.Included), "Button", GUILayout.Width(80));
-                        if (eligible && nextExcluded != excluded) SetExcluded(p.Name, nextExcluded);
+                        EditorGUILayout.EndHorizontal();
+                        EditorGUILayout.LabelField(T(reason.Value), EditorStyles.miniLabel);
+                        continue;
                     }
+                    var excluded = reason == LiteKitTextKey.CompressionExcludedManual;
+                    var label = excluded ? T(LiteKitTextKey.CompressionExcludedManual) : T(LiteKitTextKey.Included);
+                    var nextExcluded = GUILayout.Toggle(excluded, label, "Button");
+                    if (nextExcluded != excluded) SetExcluded(p.Name, nextExcluded);
                     EditorGUILayout.EndHorizontal();
                 }
                 EditorGUI.indentLevel--;
@@ -153,8 +172,6 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             for (var i = 0; i < excludedParameters.arraySize; i++) result.Add(excludedParameters.GetArrayElementAtIndex(i).stringValue);
             return result;
         }
-
-        private bool ContainsExcluded(string name) => ReadExcluded().Contains(name);
 
         private void SetExcluded(string name, bool excluded)
         {
