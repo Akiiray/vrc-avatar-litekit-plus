@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Akiiray.VRCAvatarLiteKitPlus;
 using UnityEditor;
@@ -8,82 +10,192 @@ using UnityEditor.Animations;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDK3A.Editor;
+using VRC.SDKBase.Editor;
 using VRC.Core;
 using P = VRC.SDK3.Avatars.ScriptableObjects.VRCExpressionParameters;
 using Object = UnityEngine.Object;
 
 public static class LiteKitSdkCheck
 {
+    private const string Compressor = "[LiteKit Parameter Compressor] ";
+    private const string IndexName = "LiteKit_PC_Sync_Index";
+    private const string LayerName = "LiteKit Parameter Compressor [4ED03D94]";
+    private const string Cases = "ABCD";
+
     public static async void Run()
     {
+        VRCSdkControlPanel panel = null;
+        var exitCode = 1;
         try
         {
-            var panel = ScriptableObject.CreateInstance<VRCSdkControlPanel>();
+            panel = ScriptableObject.CreateInstance<VRCSdkControlPanel>();
             if (!VRCSdkControlPanel.TryGetBuilder<IVRCSdkAvatarBuilderApi>(out var builder))
-                throw new Exception("SDK Build API unavailable");
-            foreach (var id in "ABCD") await Case(builder, id);
-            Object.DestroyImmediate(panel);
-            EditorApplication.Exit(0);
+                throw new InvalidOperationException("SDK Build API unavailable");
+
+            foreach (var id in Cases)
+            {
+                try
+                {
+                    await RunCase(builder, id);
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"SDK Builder case {id} failed", error);
+                }
+                Debug.Log($"LITEKIT_SDK_PASS {id}");
+            }
+            exitCode = 0;
         }
-        catch (Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
+        catch (Exception error)
+        {
+            Debug.LogException(error);
+        }
+        finally
+        {
+            try
+            {
+                if (panel != null) Object.DestroyImmediate(panel);
+            }
+            catch (Exception error)
+            {
+                Debug.LogException(error);
+                exitCode = 1;
+            }
+
+            if (exitCode == 0) Debug.Log($"LITEKIT_SDK_PASS {Cases.Length}");
+            EditorApplication.Exit(exitCode);
+        }
     }
 
-    private static async Task Case(IVRCSdkAvatarBuilderApi builder, char id)
+    private static async Task RunCase(IVRCSdkAvatarBuilderApi builder, char id)
     {
-        var folder = "Assets/SDK_" + Guid.NewGuid().ToString("N");
-        Directory.CreateDirectory(folder);
-        AssetDatabase.Refresh();
-        var root = new GameObject("LiteKitSDK_" + id);
-        root.AddComponent<Animator>();
-        root.AddComponent<PipelineManager>();
-        root.AddComponent<LiteKitParameterCompressor>();
-        var d = root.GetComponent<VRCAvatarDescriptor>();
-        var fxPath = folder + "/FX.controller";
-        var expressionPath = folder + "/Parameters.asset";
-        var prefabPath = folder + "/Avatar.prefab";
-        var fx = AnimatorController.CreateAnimatorControllerAtPath(fxPath);
-        if (id == 'C') fx.AddLayer("LiteKit Parameter Compressor [4ED03D94]");
-        var parameters = ScriptableObject.CreateInstance<P>();
-        parameters.parameters = id == 'D'
-            ? new[] {new P.Parameter {name="Flag", valueType=P.ValueType.Bool, networkSynced=true}}
-            : Enumerable.Range(0, 6).Select(i => new P.Parameter {
-                name="Value" + i, valueType=i < 3 ? P.ValueType.Float : P.ValueType.Int, networkSynced=true
-            }).ToArray();
-        if (id == 'B')
-            parameters.parameters = parameters.parameters.Append(new P.Parameter {
-                name="LiteKit_PC_Sync_Index", valueType=P.ValueType.Int, networkSynced=true
-            }).ToArray();
-        AssetDatabase.CreateAsset(parameters, expressionPath);
-        d.customExpressions = true;
-        var menu = ScriptableObject.CreateInstance<VRC.SDK3.Avatars.ScriptableObjects.VRCExpressionsMenu>();
-        AssetDatabase.CreateAsset(menu, folder + "/Menu.asset");
-        d.expressionsMenu = menu;
-        d.expressionParameters = parameters;
-        d.customizeAnimationLayers = true;
-        d.baseAnimationLayers = new[] {new VRCAvatarDescriptor.CustomAnimLayer
-            {type=VRCAvatarDescriptor.AnimLayerType.FX, animatorController=fx}};
-        var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
-        Object.DestroyImmediate(root);
-        AssetDatabase.SaveAssets();
-        var paths = new[] {fxPath, expressionPath, prefabPath};
-        var bytes = paths.Select(File.ReadAllBytes).ToArray();
-        var fxLayers = fx.layers.Select(x => x.name).ToArray();
-        var source = EditorJsonUtility.ToJson(parameters);
-        var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-        Debug.Log("LITEKIT_SDK_BEGIN " + id);
-        var task = builder.Build(instance);
-        if (await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(95))) != task)
-            throw new Exception("SDK Build timeout " + id);
-        string bundle = null;
-        Exception error = null;
-        try { bundle = await task; }
-        catch (Exception e) { error = e; }
-        AssetDatabase.SaveAssets();
-        if (!paths.Select((p, i) => File.ReadAllBytes(p).SequenceEqual(bytes[i])).All(x => x)
-            || source != EditorJsonUtility.ToJson(parameters) || !fxLayers.SequenceEqual(fx.layers.Select(x => x.name)))
-            throw new Exception("Source changed in " + id);
-        Debug.Log("LITEKIT_SDK_RESULT " + id + " unchanged=true bundle=" + (bundle != null && File.Exists(bundle))
-            + " error=" + (error == null ? "none" : error.GetType().Name + ": " + error.Message));
-        Object.DestroyImmediate(instance);
+        var folderName = "SDK_" + Guid.NewGuid().ToString("N");
+        var folder = "Assets/" + folderName;
+        GameObject root = null;
+        GameObject instance = null;
+        try
+        {
+            if (string.IsNullOrEmpty(AssetDatabase.CreateFolder("Assets", folderName)))
+                throw new IOException($"Could not create fixture folder {folder}");
+            root = new GameObject("LiteKitSDK_" + id);
+            root.AddComponent<Animator>();
+            root.AddComponent<PipelineManager>();
+            root.AddComponent<LiteKitParameterCompressor>();
+            var d = root.GetComponent<VRCAvatarDescriptor>();
+            var fxPath = folder + "/FX.controller";
+            var expressionPath = folder + "/Parameters.asset";
+            var prefabPath = folder + "/Avatar.prefab";
+            var fx = AnimatorController.CreateAnimatorControllerAtPath(fxPath);
+            if (id == 'C') fx.AddLayer(LayerName);
+            var parameters = ScriptableObject.CreateInstance<P>();
+            parameters.parameters = id == 'D'
+                ? new[] {new P.Parameter {name="Flag", valueType=P.ValueType.Bool, networkSynced=true}}
+                : Enumerable.Range(0, 6).Select(i => new P.Parameter {
+                    name="Value" + i, valueType=i < 3 ? P.ValueType.Float : P.ValueType.Int, networkSynced=true
+                }).ToArray();
+            if (id == 'B')
+                parameters.parameters = parameters.parameters.Append(new P.Parameter {
+                    name=IndexName, valueType=P.ValueType.Int, networkSynced=true
+                }).ToArray();
+            AssetDatabase.CreateAsset(parameters, expressionPath);
+            d.customExpressions = true;
+            var menu = ScriptableObject.CreateInstance<VRC.SDK3.Avatars.ScriptableObjects.VRCExpressionsMenu>();
+            AssetDatabase.CreateAsset(menu, folder + "/Menu.asset");
+            d.expressionsMenu = menu;
+            d.expressionParameters = parameters;
+            d.customizeAnimationLayers = true;
+            d.baseAnimationLayers = new[] {new VRCAvatarDescriptor.CustomAnimLayer
+                {type=VRCAvatarDescriptor.AnimLayerType.FX, animatorController=fx}};
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            AssetDatabase.SaveAssets();
+            var paths = new[] {fxPath, expressionPath, prefabPath};
+            var bytes = paths.Select(File.ReadAllBytes).ToArray();
+            var fxLayers = fx.layers.Select(x => x.name).ToArray();
+            var source = EditorJsonUtility.ToJson(parameters);
+            instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            Object.DestroyImmediate(root);
+            root = null;
+            var (bundle, error, logs) = await Build(builder, instance);
+            AssetDatabase.SaveAssets();
+            Assert(paths.Select((path, i) => File.ReadAllBytes(path).SequenceEqual(bytes[i])).All(equal => equal)
+                && source == EditorJsonUtility.ToJson(parameters)
+                && fxLayers.SequenceEqual(fx.layers.Select(layer => layer.name)),
+                "Source Prefab, FX or Expression Parameters changed");
+
+            ValidateResult(id, bundle, error, logs);
+            if (id == 'C')
+                Assert(fx.layers.Any(layer => layer.name == LayerName), $"Source FX lost '{LayerName}'");
+        }
+        finally
+        {
+            if (instance != null) Object.DestroyImmediate(instance);
+            if (root != null) Object.DestroyImmediate(root);
+            if (AssetDatabase.IsValidFolder(folder) && !AssetDatabase.DeleteAsset(folder))
+                throw new IOException($"Could not remove fixture folder {folder}");
+        }
+    }
+
+    private static async Task<(string Bundle, Exception Error, List<(LogType Type, string Message)> Logs)>
+        Build(IVRCSdkAvatarBuilderApi builder, GameObject instance)
+    {
+        var logs = new List<(LogType Type, string Message)>();
+        void Capture(string message, string stackTrace, LogType type) => logs.Add((type, message));
+
+        using var timeoutCancellation = new CancellationTokenSource();
+        Application.logMessageReceived += Capture;
+        try
+        {
+            var build = builder.Build(instance);
+            var timeout = Task.Delay(TimeSpan.FromSeconds(95), timeoutCancellation.Token);
+            if (await Task.WhenAny(build, timeout) != build)
+                throw new TimeoutException("SDK Build did not finish within 95 seconds");
+
+            try { return (await build, null, logs); }
+            catch (Exception error) { return (null, error, logs); }
+        }
+        finally
+        {
+            Application.logMessageReceived -= Capture;
+            timeoutCancellation.Cancel();
+        }
+    }
+
+    private static void ValidateResult(char id, string bundle, Exception error, List<(LogType Type, string Message)> logs)
+    {
+        if (id == 'A' || id == 'D')
+        {
+            if (error != null) throw new InvalidOperationException("Unexpected SDK Build exception", error);
+            Assert(!string.IsNullOrEmpty(bundle) && File.Exists(bundle), $"SDK Build did not return an existing Bundle: {bundle}");
+            if (id == 'A')
+                Assert(logs.Any(log => log.Type == LogType.Log && log.Message == Compressor + "48 → 24 bits (-24)"),
+                    "Missing LiteKit compression result (48 → 24 bits)");
+            else
+                Assert(logs.Any(log => log.Type == LogType.Log &&
+                    (log.Message == Compressor + "圧縮対象の同期Float / Int Parameterはありません。" ||
+                     log.Message == Compressor + "There are no eligible synchronized Float / Int parameters.")),
+                    "Missing LiteKit no-target diagnostic");
+            return;
+        }
+
+        Assert(error is BuilderException && string.IsNullOrEmpty(bundle),
+            $"Expected SDK BuilderException with no Bundle; got {error?.ToString() ?? "no exception"}, Bundle: {bundle}");
+        var japanese = id == 'B'
+            ? $"「Parameters」で予約 Parameter 名「{IndexName}」が使用されています。"
+            : $"「FX」に予約レイヤー「{LayerName}」が存在します。";
+        var english = id == 'B'
+            ? $"Reserved parameter name '{IndexName}' is used in 'Parameters'."
+            : $"Reserved Animator layer '{LayerName}' already exists in 'FX'.";
+        Assert(logs.Any(log => log.Type == LogType.Exception
+            && log.Message.StartsWith("InvalidOperationException: " + Compressor.TrimEnd() + "\n", StringComparison.Ordinal)
+            && log.Message.Split('\n').Skip(1).Any(line => line.TrimEnd('\r') == japanese || line.TrimEnd('\r') == english)),
+            $"Missing specific LiteKit collision error: {english}");
+        Assert(logs.Any(log => log.Message.Contains("Preprocess Callback Failed")
+            && log.Message.Contains("'BuildFrameworkOptimizeHook' reported a failure")),
+            "SDK did not report that the NDMF optimization callback aborted the build");
+    }
+
+    private static void Assert(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
     }
 }

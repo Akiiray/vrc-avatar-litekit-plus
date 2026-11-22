@@ -58,9 +58,21 @@ Select-String -Path (Join-Path $project 'contract.log') -Pattern '^LITEKIT_(CASE
 | C | AのFXに `LiteKit Parameter Compressor [4ED03D94]` を追加 | 同名Layerを報告し、既存Layerを保持してSDK Build失敗 | Layer名をログに記録。NDMFの前処理がSDK Buildを中断し、Bundleなし。既存Layer保持 |
 | D | 同期Bool 1件、圧縮有効 | 圧縮をスキップしてBundleを出力 | 対象なしのログ、SDKがBundleを返し、例外なし |
 
-検証環境は上記と同じです。SDKの公開 `IVRCSdkAvatarBuilderApi.Build(GameObject)` でローカルBundleを生成しました。認証画面を開かず、認証・Upload操作は行っていません。検証AvatarはAnimator、Descriptor、PipelineManager（Blueprint IDは空）、LiteKit Component、カスタムFX、Expression Parameters、空のExpression Menuを持つPrefabです。A〜Dすべてで元Prefab・FX・Expression Parametersのバイト比較、元Expression ParametersのJSON、元FXのLayer名が一致しました。
+検証環境は上記と同じです。自動判定版の実行ログでA〜DのPASSと集計 `LITEKIT_SDK_PASS 4` を確認しました。SDKの公開 `IVRCSdkAvatarBuilderApi.Build(GameObject)` でローカルBundleを生成しました。認証画面を開かず、認証・Upload操作は行っていません。検証AvatarはAnimator、Descriptor、PipelineManager（Blueprint IDは空）、LiteKit Component、カスタムFX、Expression Parameters、空のExpression Menuを持つPrefabです。A〜Dすべてで元Prefab・FX・Expression Parametersのバイト比較、元Expression ParametersのJSON、元FXのLayer名が一致しました。
 
-[SDK Build用コード](../.github/verification/LiteKitSdkCheck.cs.txt)を一時プロジェクトの `Assets/Editor/LiteKitSdkCheck.cs` にコピーし、上のコマンドの `-executeMethod` を `LiteKitSdkCheck.Run` に変えると再実行できます。ログの `LITEKIT_SDK_RESULT` で全4件の `unchanged=true`、A・Dの `bundle=True error=none`、B・Cの `bundle=False error=BuilderException` を照合します。B・Cの個別理由は直前のLiteKitエラーに出ます。終了コードはテストコード自体の例外を示すため、A〜Dの判定にはログも確認します。
+### 自動判定と再実行
+
+[SDK Build用コード](../.github/verification/LiteKitSdkCheck.cs.txt)を一時プロジェクトの `Assets/Editor/LiteKitSdkCheck.cs` にコピーします。上のバッチコマンドで `-executeMethod` を `LiteKitSdkCheck.Run` に、ログファイル名を `sdk-contract.log` に変更します。終了コードを検査し、次のコマンドで結果を確認できます。
+
+```powershell
+Select-String -Path (Join-Path $project 'sdk-contract.log') -Pattern '^LITEKIT_SDK_PASS '
+```
+
+ケースごとのログ購読で、そのケースのSDK Build中に出た診断を収集します。Aは実在するBundleとLiteKitの `48 → 24 bits (-24)`、Dは実在するBundleと対象なしの診断を検査します。B・Cは、Bundleを返さずSDKの `BuilderException` が発生したこと、LiteKit例外に該当する名前と衝突理由があること、SDKがNDMFの前処理コールバック失敗を報告したことを検査します。日英両方の診断文を受け付けます。Cは元FXの既存Layerが残っていることも確認します。
+
+各ケースが合格すると `LITEKIT_SDK_PASS A` のように出力されます。全4件に合格し、後片付けも完了した場合のみ `LITEKIT_SDK_PASS 4` と終了コード0になります。期待値との差異、例外、95秒のタイムアウトは失敗として診断し、終了コード1を返します。ログ購読を解除し、作成したオブジェクトとケース固有の一時Assetを片付けます。
+
+一時コピーでBの期待診断だけを意図的に変え、SDKが失敗しても衝突診断が一致しなければテストが失敗し、終了コード1になることも確認しました。
 
 ## 残る検証
 
