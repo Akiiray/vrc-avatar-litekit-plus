@@ -1,0 +1,203 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Akiiray.VRCAvatarLiteKitPlus;
+using UnityEditor;
+using UnityEngine;
+using UnityEditor.Animations;
+using VRC.SDK3.Avatars.Components;
+using VRC.SDK3.Avatars.ScriptableObjects;
+using Object = UnityEngine.Object;
+
+public sealed class LiteKitInspectorCheck : EditorWindow
+{
+    private const string LongName = "SYNC_This_is_a_deliberately_long_parameter_name_to_verify_that_the_checkbox_remains_visible";
+    private const string LanguageKey = "Akiiray.VRCAvatarLiteKitPlus.Language";
+    private Editor inspector;
+    private Vector2 scroll;
+    private string oldLanguage;
+    private bool languageWasSet;
+    private int renderStep = -1;
+    private bool advanceQueued;
+
+    // Use -executeMethod LiteKitInspectorCheck.ShowFixture in a disposable Unity project.
+    public static void ShowFixture()
+    {
+        RunChecks();
+        var window = GetWindow<LiteKitInspectorCheck>(true, "LiteKit Inspector Fixture");
+        window.position = new Rect(100, 100, 680, 740);
+        window.languageWasSet = EditorPrefs.HasKey(LanguageKey);
+        window.oldLanguage = EditorPrefs.GetString(LanguageKey);
+        EditorPrefs.SetString(LanguageKey, "Japanese");
+        window.inspector = Editor.CreateEditor(CreateFixture());
+        window.Show();
+        window.renderStep = 0;
+    }
+
+    private void OnGUI()
+    {
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            if (GUILayout.Button("日本語")) EditorPrefs.SetString(LanguageKey, "Japanese");
+            if (GUILayout.Button("English")) EditorPrefs.SetString(LanguageKey, "English");
+        }
+        using (var view = new EditorGUILayout.ScrollViewScope(scroll))
+        {
+            scroll = view.scrollPosition;
+            if (inspector != null)
+            {
+                inspector.OnInspectorGUI();
+                if (Event.current.type == EventType.Repaint && renderStep >= 0 && !advanceQueued)
+                {
+                    advanceQueued = true;
+                    EditorApplication.delayCall += AdvanceRendering;
+                }
+            }
+        }
+    }
+
+    private void AdvanceRendering()
+    {
+        if (!this || inspector == null) return;
+        var filter = inspector.GetType().GetField("parameterFilter", BindingFlags.NonPublic | BindingFlags.Instance);
+        Debug.Log($"LITEKIT_INSPECTOR_DRAW {EditorPrefs.GetString(LanguageKey)} / {filter.GetValue(inspector)}");
+        advanceQueued = false;
+        renderStep++;
+        if (renderStep == 6)
+        {
+            renderStep = -1;
+            Debug.Log("LITEKIT_INSPECTOR_DRAW_PASS 6");
+            return;
+        }
+        EditorPrefs.SetString(LanguageKey, renderStep < 3 ? "Japanese" : "English");
+        filter.SetValue(inspector, Enum.ToObject(filter.FieldType, renderStep % 3));
+        Repaint();
+    }
+
+    private void OnDestroy()
+    {
+        if (languageWasSet) EditorPrefs.SetString(LanguageKey, oldLanguage);
+        else if (oldLanguage != null) EditorPrefs.DeleteKey(LanguageKey);
+    }
+
+    private static LiteKitParameterCompressor CreateFixture()
+    {
+        var avatar = new GameObject("Inspector Fixture");
+        var component = avatar.AddComponent<LiteKitParameterCompressor>();
+        var descriptor = avatar.GetComponent<VRCAvatarDescriptor>();
+        var expression = CreateInstance<VRCExpressionParameters>();
+        expression.parameters = new[]
+        {
+            Parameter("SYNC_EMOTE", VRCExpressionParameters.ValueType.Int),
+            Parameter(LongName, VRCExpressionParameters.ValueType.Int),
+            Parameter("SYNC_HANDSIGN", VRCExpressionParameters.ValueType.Int),
+            Parameter("Viseme", VRCExpressionParameters.ValueType.Float),
+            Parameter("FlapOn", VRCExpressionParameters.ValueType.Bool)
+        };
+        descriptor.expressionParameters = expression;
+        var fx = new AnimatorController { name = "Fixture FX" };
+        fx.AddParameter("FX_Trigger", AnimatorControllerParameterType.Trigger);
+        descriptor.baseAnimationLayers = new[]
+        {
+            new VRCAvatarDescriptor.CustomAnimLayer
+            {
+                type = VRCAvatarDescriptor.AnimLayerType.FX, animatorController = fx
+            }
+        };
+        component.ExcludedParameters.Add("SYNC_HANDSIGN");
+        component.ExcludedParameters.Add("FlapOn");
+        return component;
+    }
+
+    private static VRCExpressionParameters.Parameter Parameter(string name, VRCExpressionParameters.ValueType type) =>
+        new VRCExpressionParameters.Parameter { name = name, valueType = type, networkSynced = true };
+
+    public static void RunChecks()
+    {
+        var component = CreateFixture();
+        var editor = Editor.CreateEditor(component);
+        try
+        {
+            Assert(ContainsOnly(component, "SYNC_HANDSIGN", "FlapOn"), "Initial settings");
+            Assert(Count(editor, "Configurable") == 3, "Configurable includes only editable rows");
+            Assert(Count(editor, "All") == 6, "All rows including FX");
+            Assert(Count(editor, "ExcludedOnly") == 4, "Excluded includes manual and automatic rows");
+            Assert(ContainsOnly(component, "SYNC_HANDSIGN", "FlapOn"), "Filters are read-only");
+            Assert(PlanTargets(editor, component) == 2, "Initial preview targets");
+
+            Undo.IncrementCurrentGroup();
+            SetExcluded(editor, "SYNC_HANDSIGN", false);
+            Assert(ContainsOnly(component, "FlapOn") && PlanTargets(editor, component) == 3, "ON restores the target");
+            Undo.FlushUndoRecordObjects();
+            Undo.PerformUndo();
+            Assert(ContainsOnly(component, "SYNC_HANDSIGN", "FlapOn") && PlanTargets(editor, component) == 2, "Undo");
+            Undo.PerformRedo();
+            Assert(ContainsOnly(component, "FlapOn") && PlanTargets(editor, component) == 3, "Redo");
+
+            component.EnableCompression = false;
+            SetExcluded(editor, LongName, true);
+            Assert(ContainsOnly(component, "FlapOn", LongName) && PlanTargets(editor, component) == 2, "OFF while globally disabled");
+            var path = AssetDatabase.GenerateUniqueAssetPath("Assets/LiteKitInspectorFixture.prefab");
+            var prefab = PrefabUtility.SaveAsPrefabAsset(component.gameObject, path);
+            Assert(prefab != null, "Prefab saved");
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path));
+            var loaded = instance.GetComponent<LiteKitParameterCompressor>();
+            var reopened = Editor.CreateEditor(loaded);
+            try
+            {
+                Assert(!loaded.EnableCompression && ContainsOnly(loaded, "FlapOn", LongName), "Prefab reload and inspector reopen");
+                SetExcluded(reopened, LongName, false);
+                Assert(ContainsOnly(loaded, "FlapOn") && PrefabUtility.HasPrefabInstanceAnyOverrides(instance, false), "Prefab override");
+                Assert(ContainsOnly(prefab.GetComponent<LiteKitParameterCompressor>(), "FlapOn", LongName), "Prefab asset unchanged");
+            }
+            finally
+            {
+                Object.DestroyImmediate(reopened);
+                Object.DestroyImmediate(instance);
+            }
+            Debug.Log("LITEKIT_INSPECTOR_PASS");
+        }
+        finally
+        {
+            Object.DestroyImmediate(editor);
+            Object.DestroyImmediate(component.gameObject);
+        }
+    }
+
+    private static bool ContainsOnly(LiteKitParameterCompressor component, params string[] names) =>
+        new HashSet<string>(component.ExcludedParameters).SetEquals(names) && component.ExcludedParameters.Count == names.Length;
+
+    private static System.Collections.IEnumerable Scanned(Editor editor) =>
+        (System.Collections.IEnumerable)editor.GetType().GetField("scanned", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(editor);
+
+    private static int Count(Editor editor, string filter)
+    {
+        var type = editor.GetType();
+        var match = type.GetMethod("MatchesFilter", BindingFlags.NonPublic | BindingFlags.Static);
+        var filterValue = Enum.Parse(type.GetNestedType("ParameterFilter", BindingFlags.NonPublic), filter);
+        var find = type.Assembly.GetType(type.Namespace + ".ParameterExclusionRules").GetMethod("GetExclusion", BindingFlags.NonPublic | BindingFlags.Static);
+        var names = ((LiteKitParameterCompressor)editor.target).ExcludedParameters;
+        return Scanned(editor).Cast<object>().Count(p => (bool)match.Invoke(null, new[] { filterValue, find.Invoke(null, new object[] { p, names }) }));
+    }
+
+    private static int PlanTargets(Editor editor, LiteKitParameterCompressor component)
+    {
+        var type = editor.GetType();
+        var create = type.Assembly.GetType(type.Namespace + ".CompressionPlan").GetMethod("Create", BindingFlags.NonPublic | BindingFlags.Static);
+        var plan = create.Invoke(null, new object[] { Scanned(editor), component.ExcludedParameters, 1 });
+        return ((System.Collections.ICollection)plan.GetType().GetField("Targets", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(plan)).Count;
+    }
+
+    private static void SetExcluded(Editor editor, string name, bool excluded)
+    {
+        editor.serializedObject.Update();
+        editor.GetType().GetMethod("SetExcluded", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(editor, new object[] { name, excluded });
+    }
+
+    private static void Assert(bool ok, string message)
+    {
+        if (!ok) throw new InvalidOperationException(message);
+    }
+}

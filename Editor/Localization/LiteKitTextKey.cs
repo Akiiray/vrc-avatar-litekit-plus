@@ -36,6 +36,10 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.Localization
         CompressionGeneratedLayer,
         CompressionInvalidExpression,
         CompressionExcludedBitWidth,
-        CompressionGeneratedFxParameter
+        CompressionGeneratedFxParameter,
+        CompressionAutomaticallyExcluded,
+        CompressionFilterConfigurable,
+        CompressionFilterAll,
+        CompressionFilterExcluded
     }
 }

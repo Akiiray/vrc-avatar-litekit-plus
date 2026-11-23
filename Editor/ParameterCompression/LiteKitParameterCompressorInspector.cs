@@ -11,11 +11,14 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
     [CustomEditor(typeof(LiteKitParameterCompressor))]
     internal sealed class LiteKitParameterCompressorInspector : UnityEditor.Editor
     {
+        private enum ParameterFilter { Configurable, All, ExcludedOnly }
+
         private static string T(LiteKitTextKey key) => LiteKitLocalization.Get(LiteKitLocalization.CurrentLanguage, key);
         private List<ScannedParameter> scanned = new List<ScannedParameter>();
         private readonly Dictionary<string, bool> sourceFoldouts = new Dictionary<string, bool>();
         private VRCAvatarDescriptor descriptor;
         private bool generatedFoldout;
+        private ParameterFilter parameterFilter;
         private SerializedProperty enableCompression;
         private SerializedProperty syncChannelCount;
         private SerializedProperty excludedParameters;
@@ -55,6 +58,19 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             EditorGUILayout.LabelField(T(LiteKitTextKey.Parameters), EditorStyles.boldLabel);
             if (GUILayout.Button(T(LiteKitTextKey.Rescan), GUILayout.Width(90))) Rescan();
             EditorGUILayout.EndHorizontal();
+            var selectedFilter = (ParameterFilter)GUILayout.Toolbar((int)parameterFilter, new[]
+            {
+                T(LiteKitTextKey.CompressionFilterConfigurable),
+                T(LiteKitTextKey.CompressionFilterAll),
+                T(LiteKitTextKey.CompressionFilterExcluded)
+            });
+            if (selectedFilter != parameterFilter)
+            {
+                parameterFilter = selectedFilter;
+                Repaint();
+                GUIUtility.ExitGUI();
+            }
+
             DrawParameterList(excluded);
             EditorGUILayout.HelpBox(LiteKitLocalization.Get(LiteKitLocalization.CurrentLanguage, LiteKitTextKey.PreviewDisclaimer), MessageType.Info);
         }
@@ -118,33 +134,72 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             GUI.Label(rect, T(LiteKitTextKey.BudgetLegend), EditorStyles.miniLabel);
         }
 
+        private static bool MatchesFilter(ParameterFilter filter, LiteKitTextKey? exclusion)
+        {
+            switch (filter)
+            {
+                case ParameterFilter.Configurable:
+                    return !exclusion.HasValue || exclusion == LiteKitTextKey.CompressionExcludedManual;
+                case ParameterFilter.ExcludedOnly:
+                    return exclusion.HasValue;
+                default:
+                    return true;
+            }
+        }
+
         private void DrawParameterList(HashSet<string> excludedNames)
         {
-            foreach (var group in scanned.GroupBy(p => p.Source))
+            var visible = scanned.Select(parameter => (
+                    Parameter: parameter, Exclusion: ParameterExclusionRules.GetExclusion(parameter, excludedNames)))
+                .Where(row => MatchesFilter(parameterFilter, row.Exclusion))
+                .GroupBy(row => row.Parameter.Source);
+            foreach (var group in visible)
             {
-                if (!sourceFoldouts.ContainsKey(group.Key)) sourceFoldouts[group.Key] = true;
-                sourceFoldouts[group.Key] = EditorGUILayout.Foldout(sourceFoldouts[group.Key], group.Key, true);
-                if (!sourceFoldouts[group.Key]) continue;
-                EditorGUI.indentLevel++;
-                foreach (var p in group)
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    var type = p.IsTrigger ? "Trigger" : p.Type.ToString();
-                    EditorGUILayout.LabelField($"{p.Name}  [{type} / {p.BitCost} bit / {(p.NetworkSynced ? T(LiteKitTextKey.Synced) : T(LiteKitTextKey.LocalParameter))} / {(p.Saved ? T(LiteKitTextKey.Saved) : T(LiteKitTextKey.NotSaved))}]", EditorStyles.miniLabel);
-                    var reason = ParameterExclusionRules.GetExclusion(p, excludedNames);
-                    if (reason != null && reason != LiteKitTextKey.CompressionExcludedManual)
-                    {
-                        EditorGUILayout.EndHorizontal();
-                        EditorGUILayout.LabelField(T(reason.Value), EditorStyles.miniLabel);
-                        continue;
-                    }
-                    var excluded = reason == LiteKitTextKey.CompressionExcludedManual;
-                    var label = excluded ? T(LiteKitTextKey.CompressionExcludedManual) : T(LiteKitTextKey.Included);
-                    var nextExcluded = GUILayout.Toggle(excluded, label, "Button");
-                    if (nextExcluded != excluded) SetExcluded(p.Name, nextExcluded);
-                    EditorGUILayout.EndHorizontal();
-                }
-                EditorGUI.indentLevel--;
+                var expanded = !sourceFoldouts.TryGetValue(group.Key, out var previous) || previous;
+                expanded = EditorGUILayout.Foldout(expanded, group.Key, true);
+                sourceFoldouts[group.Key] = expanded;
+                if (!expanded) continue;
+
+                using (new EditorGUI.IndentLevelScope())
+                    foreach (var row in group)
+                        DrawParameterRow(row.Parameter, row.Exclusion);
+            }
+        }
+
+        private void DrawParameterRow(ScannedParameter parameter, LiteKitTextKey? exclusion)
+        {
+            var included = !exclusion.HasValue;
+            var automatic = !included && exclusion != LiteKitTextKey.CompressionExcludedManual;
+            var state = T(automatic ? LiteKitTextKey.CompressionAutomaticallyExcluded
+                : included ? LiteKitTextKey.Included : LiteKitTextKey.CompressionExcludedManual);
+            var type = parameter.IsTrigger ? "Trigger" : parameter.Type.ToString();
+            var sync = T(parameter.NetworkSynced ? LiteKitTextKey.Synced : LiteKitTextKey.LocalParameter);
+            var attributes = $"{type} / {parameter.BitCost} bit / {sync}";
+            var tooltip = $"{parameter.Name}\n{attributes}\n{state}";
+            if (automatic) tooltip += "\n" + T(exclusion.Value);
+
+            var row = EditorGUI.IndentedRect(EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight));
+            var toggle = new Rect(row.x, row.y, 18, row.height);
+            const float gap = 4;
+            var labelWidth = Mathf.Max(0, row.width - toggle.width - 3 * gap);
+            var attributesWidth = Mathf.Min(144, labelWidth * 0.33f);
+            var stateWidth = Mathf.Min(140, labelWidth * 0.31f);
+            var name = new Rect(toggle.xMax + gap, row.y, labelWidth - attributesWidth - stateWidth, row.height);
+            var details = new Rect(name.xMax + gap, row.y, attributesWidth, row.height);
+            var status = new Rect(details.xMax + gap, row.y, stateWidth, row.height);
+
+            bool nextIncluded;
+            using (new EditorGUI.DisabledScope(automatic))
+                nextIncluded = GUI.Toggle(toggle, included, new GUIContent(string.Empty, tooltip), EditorStyles.toggle);
+            GUI.Label(name, new GUIContent(parameter.Name, tooltip), EditorStyles.miniLabel);
+            GUI.Label(details, new GUIContent(attributes, tooltip), EditorStyles.miniLabel);
+            GUI.Label(status, new GUIContent(state, tooltip), EditorStyles.miniLabel);
+
+            if (!automatic && nextIncluded != included)
+            {
+                SetExcluded(parameter.Name, !nextIncluded);
+                Repaint();
+                GUIUtility.ExitGUI();
             }
         }
 
@@ -175,12 +230,18 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
 
         private void SetExcluded(string name, bool excluded)
         {
-            serializedObject.Update();
-            var values = ReadExcluded();
-            if (excluded) values.Add(name); else values.Remove(name);
-            excludedParameters.arraySize = values.Count;
-            var index = 0;
-            foreach (var value in values.OrderBy(v => v, StringComparer.Ordinal)) excludedParameters.GetArrayElementAtIndex(index++).stringValue = value;
+            if (excluded)
+            {
+                var index = excludedParameters.arraySize;
+                excludedParameters.arraySize++;
+                excludedParameters.GetArrayElementAtIndex(index).stringValue = name;
+            }
+            else
+            {
+                for (var i = excludedParameters.arraySize - 1; i >= 0; i--)
+                    if (excludedParameters.GetArrayElementAtIndex(i).stringValue == name)
+                        excludedParameters.DeleteArrayElementAtIndex(i);
+            }
             serializedObject.ApplyModifiedProperties();
         }
     }

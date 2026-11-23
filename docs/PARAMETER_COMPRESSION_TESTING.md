@@ -77,3 +77,9 @@ Select-String -Path (Join-Path $project 'sdk-contract.log') -Pattern '^LITEKIT_S
 ## 残る検証
 
 VRChatクライアント間でのChannelとIndexの到着順・取りこぼし、PC / Android / iOS間の同期、VRCFury等との併用順、宣言下限のSDK 3.7.0・NDMF 1.6.0でのビルドは未検証です。
+
+## Inspector の確認
+
+使い捨ての Unity 2022.3.22f1 プロジェクトで、[Inspector 検証コード](../.github/verification/LiteKitInspectorCheck.cs.txt)を `Assets/Editor/LiteKitInspectorCheck.cs` にコピーし、通常の Editor 起動引数に `-executeMethod LiteKitInspectorCheck.ShowFixture` を追加します。
+
+`LITEKIT_INSPECTOR_PASS` はフィルター判定、圧縮対象の再計算、Undo / Redo、全体無効時の手動除外、Prefab の再読み込みと Override の検証結果です。`LITEKIT_INSPECTOR_DRAW_PASS 6` は日本語・英語の3フィルターで Repaint が完了したことを示します。検証ウィンドウには長い名前、手動除外と自動除外が重なる項目、FX の Trigger を含みます。
