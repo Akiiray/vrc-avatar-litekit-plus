@@ -1,0 +1,181 @@
+using System;
+using System.IO;
+using System.Linq;
+using Akiiray.VRCAvatarLiteKitPlus;
+using nadena.dev.ndmf;
+using nadena.dev.ndmf.platform;
+using UnityEditor;
+using UnityEditor.Animations;
+using UnityEngine;
+using VRC.SDK3.Avatars.Components;
+using VRC.SDK3.Avatars.ScriptableObjects;
+using VRC.SDK3.Dynamics.Contact.Components;
+using VRC.SDKBase;
+using P = VRC.SDK3.Avatars.ScriptableObjects.VRCExpressionParameters;
+using T = VRC.SDK3.Avatars.ScriptableObjects.VRCExpressionParameters.ValueType;
+using Object = UnityEngine.Object;
+
+public static class LiteKitContract
+{
+    private const string Prefix = "LiteKit_PC_";
+    private const string Index = Prefix + "Sync_Index";
+    private const string LayerName = "LiteKit Parameter Compressor [4ED03D94]";
+    private static string folder;
+    private static int tested;
+
+    public static void Run()
+    {
+        try
+        {
+            folder = "Assets/Fixture_" + Guid.NewGuid().ToString("N");
+            Directory.CreateDirectory(folder);
+            AssetDatabase.Refresh();
+            Case("Float", 5, 0, 1, 2, 5);
+            Case("Int", 0, 5, 1, 2, 5);
+            Case("Mixed", 4, 3, 2, 5, 4, repeat: true);
+            Case("Zero", 0, 0, 1, 0, 0);
+            Case("Single", 1, 0, 1, 0, 0);
+            Case("MaxUseful", 32, 0, 999, 31, 2);
+            Case("IndexMax", 255, 0, 1, 2, 255);
+            Case("IndexOverflow", 256, 0, 1, 0, 0, expectError: true);
+            Case("BudgetOverflow", 34, 0, 999, 0, 0, expectError: true);
+            Case("ReservedExpression", 4, 0, 1, 0, 0, (d,c) =>
+                d.expressionParameters.parameters = d.expressionParameters.parameters.Append(Param(Index, T.Int)).ToArray(), true);
+            Case("ReservedFxSameType", 4, 0, 1, 0, 0, (d,c) =>
+                c.AddParameter(Index, AnimatorControllerParameterType.Int), true);
+            Case("ReservedFxWrongType", 4, 0, 1, 0, 0, (d,c) =>
+                c.AddParameter(Index, AnimatorControllerParameterType.Trigger), true);
+            Case("WrongTargetType", 4, 0, 1, 0, 0, (d,c) =>
+                c.AddParameter("F0", AnimatorControllerParameterType.Int), true);
+            Case("WrongIsLocalType", 4, 0, 1, 0, 0, (d,c) =>
+                c.AddParameter("IsLocal", AnimatorControllerParameterType.Float), true);
+            Case("ExistingLayer", 4, 0, 1, 0, 0, (d,c) => c.AddLayer(LayerName), true);
+            Case("TimingTarget", 4, 0, 1, 0, 0, (d,c) =>
+                new GameObject("__LiteKit_PC_Timing__").transform.SetParent(d.transform), true);
+            Case("DuplicateExpression", 4, 0, 1, 0, 0, (d,c) =>
+                d.expressionParameters.parameters = d.expressionParameters.parameters.Append(Param("F0", T.Int)).ToArray(), true);
+            Case("CustomBitWidth", 5, 0, 1, 2, 4, (d,c) =>
+            {
+                d.expressionParameters.parameters[0].bitWidth = 4;
+                d.expressionParameters.parameters[1].useCustomLerpDuration = true;
+                d.expressionParameters.parameters[1].customLerpDuration = 0.15f;
+            });
+            Case("ReservedWithoutTargets", 0, 0, 1, 0, 0, (d,c) => c.AddParameter(Index, AnimatorControllerParameterType.Int), true);
+            Case("Disabled", 5, 0, 1, 0, 0, (d,c) => d.GetComponent<LiteKitParameterCompressor>().EnableCompression = false);
+            Case("Contact", 5, 0, 1, 2, 4, (d,c) =>
+                new GameObject("Contact").transform.SetParent(d.transform));
+            Debug.Log("LITEKIT_CONTRACT_PASS " + tested);
+            EditorApplication.Exit(0);
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+            EditorApplication.Exit(1);
+        }
+    }
+
+    private static P.Parameter Param(string name, T type) => new P.Parameter
+    {
+        name = name, valueType = type, defaultValue = 1, saved = true, networkSynced = true
+    };
+
+    private static void Case(string name, int floats, int ints, int requested, int channelsWithIndex, int batches,
+        Action<VRCAvatarDescriptor, AnimatorController> configure = null, bool expectError = false, bool repeat = false)
+    {
+        var root = new GameObject(name);
+        var component = root.AddComponent<LiteKitParameterCompressor>();
+        component.SyncChannelCount = requested;
+        var descriptor = root.GetComponent<VRCAvatarDescriptor>();
+        var fxPath = folder + "/" + name + ".controller";
+        var paramPath = folder + "/" + name + ".asset";
+        var prefabPath = folder + "/" + name + ".prefab";
+        var fx = AnimatorController.CreateAnimatorControllerAtPath(fxPath);
+        var expressions = ScriptableObject.CreateInstance<P>();
+        expressions.parameters = Enumerable.Range(0, floats).Select(i => Param("F" + i, T.Float))
+            .Concat(Enumerable.Range(0, ints).Select(i => Param("I" + i, T.Int))).ToArray();
+        AssetDatabase.CreateAsset(expressions, paramPath);
+        descriptor.customExpressions = true;
+        descriptor.expressionParameters = expressions;
+        descriptor.customizeAnimationLayers = true;
+        descriptor.baseAnimationLayers = new[] {new VRCAvatarDescriptor.CustomAnimLayer
+            {type = VRCAvatarDescriptor.AnimLayerType.FX, animatorController = fx}};
+        configure?.Invoke(descriptor, fx);
+        if (name == "Contact") root.transform.Find("Contact").gameObject.AddComponent<VRCContactReceiver>().parameter = "F0";
+        EditorUtility.SetDirty(expressions);
+        var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+        Object.DestroyImmediate(root);
+        AssetDatabase.SaveAssets();
+        var paths = new[] {fxPath, paramPath, prefabPath};
+        var sourceBytes = paths.Select(File.ReadAllBytes).ToArray();
+        var sourceExpression = EditorJsonUtility.ToJson(expressions);
+        var sourceParameters = fx.parameters.Select(p => p.name).ToArray();
+        var sourceLayers = fx.layers.Select(l => l.name).ToArray();
+
+        for (var i = 0; i < (repeat ? 2 : 1); i++)
+        {
+            var clone = Object.Instantiate(prefab);
+            var report = AvatarProcessor.ProcessAvatar(clone, AmbientPlatform.CurrentPlatform);
+            Assert(report.Successful != expectError, name + ": expected build status");
+            var result = clone.GetComponent<VRCAvatarDescriptor>();
+            if (!expectError)
+            {
+                var sync = result.expressionParameters.parameters.Where(p => p.name.StartsWith(Prefix)).ToArray();
+                Assert(sync.Length == channelsWithIndex, name + ": channel count");
+                Assert(sync.All(p => p.networkSynced && !p.saved && p.defaultValue == 0), name + ": channel flags");
+                var output = (AnimatorController)result.baseAnimationLayers.Single(x => x.type == VRCAvatarDescriptor.AnimLayerType.FX).animatorController;
+                var layers = output.layers.Where(l => l.name == LayerName).ToArray();
+                Assert(layers.Length == (batches == 0 ? 0 : 1), name + ": layer count");
+                if (batches != 0) CheckLayer(name, batches, layers[0].stateMachine);
+                Assert(result.expressionParameters.parameters.Take(floats + ints).All(p => p.saved && p.defaultValue == 1),
+                    name + ": original parameter attributes");
+                if (name == "Contact") Assert(result.expressionParameters.parameters.First().networkSynced, "Contact stays synced");
+                if (name == "CustomBitWidth")
+                {
+                    var entries = result.expressionParameters.parameters;
+                    Assert(entries[0].networkSynced && entries[0].bitWidth == 4, "custom width stays directly synced");
+                    Assert(!entries[1].networkSynced && entries[1].useCustomLerpDuration && entries[1].customLerpDuration == 0.15f,
+                        "new SDK attributes survive the expression asset clone");
+                    Assert(result.expressionParameters.CalcTotalCost() == 20, "SDK totals include 4-bit originals");
+                }
+            }
+            Object.DestroyImmediate(clone);
+            AssetDatabase.SaveAssets();
+            Assert(sourceExpression == EditorJsonUtility.ToJson(expressions), name + ": source expression reference");
+            Assert(sourceParameters.SequenceEqual(fx.parameters.Select(p => p.name)) &&
+                sourceLayers.SequenceEqual(fx.layers.Select(l => l.name)), name + ": source FX reference");
+            for (var n = 0; n < paths.Length; n++)
+                Assert(sourceBytes[n].SequenceEqual(File.ReadAllBytes(paths[n])), name + ": source bytes " + paths[n]);
+        }
+        tested++;
+        Debug.Log("LITEKIT_CASE_PASS " + name);
+    }
+
+    private static void CheckLayer(string name, int batches, AnimatorStateMachine machine)
+    {
+        Assert(machine.states.Length == 3 + 2 * batches, name + ": state count");
+        for (var i = 1; i <= batches; i++)
+        {
+            var local = machine.states.Single(s => s.state.name == "Batch_" + i).state;
+            var remote = machine.states.Single(s => s.state.name == "Set_B" + i).state;
+            var encoder = local.behaviours.OfType<VRCAvatarParameterDriver>().Single();
+            var decoder = remote.behaviours.OfType<VRCAvatarParameterDriver>().Single();
+            Assert(encoder.localOnly && !decoder.localOnly && local.motion.averageDuration >= 0.09f, name + ": timing / branch");
+            Assert(encoder.parameters.Count == decoder.parameters.Count + 1, name + ": driver count");
+            var last = encoder.parameters.Last();
+            Assert(last.type == VRC_AvatarParameterDriver.ChangeType.Set && last.name == Index && last.value == i,
+                name + ": Index must be set last");
+            for (var j = 0; j < decoder.parameters.Count; j++)
+            {
+                var send = encoder.parameters[j];
+                var receive = decoder.parameters[j];
+                Assert(send.type == VRC_AvatarParameterDriver.ChangeType.Copy && send.type == receive.type &&
+                    send.name == receive.source && send.source == receive.name, name + ": inverse Copy");
+            }
+        }
+    }
+
+    private static void Assert(bool ok, string failure)
+    {
+        if (!ok) throw new InvalidOperationException(failure);
+    }
+}

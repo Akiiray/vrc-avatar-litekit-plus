@@ -26,7 +26,7 @@
 
 - Parameter CompressorのNDMF `Optimizing` build pass（v0.2.0で実装）。
 - Float / Intの共有同期チャンネル、Encoder / Decoder、Inspector preview（v0.2.0で実装）。
-- ビルド時の生成Asset差し替え。
+- Issue #12の衝突検証・生成前停止・Inspector表示をPR #15で実装。残る検証は[検証記録](PARAMETER_COMPRESSION_TESTING.md)を参照。
 - 明示的なopt-inとInspector Preview。Previewは実BuildのDry Runとは区別する。
 - Avatar Optimizer、TexTransTool、Modular Avatarなどとの関係整理。
 

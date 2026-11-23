@@ -2,7 +2,9 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
 {
     internal static class CompressionConstants
     {
-        internal const string SyncPrefix = "LiteKit_PC_Sync_";
+        internal const string ReservedPrefix = "LiteKit_PC_";
+        internal const string SyncPrefix = ReservedPrefix + "Sync_";
+        internal const string TimingPath = "__LiteKit_PC_Timing__";
         internal const string IndexParameter = SyncPrefix + "Index";
         internal const string FloatChannelPrefix = SyncPrefix + "Float_";
         internal const string IntChannelPrefix = SyncPrefix + "Int_";

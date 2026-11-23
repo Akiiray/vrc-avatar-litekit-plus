@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using VRC.SDK3.Avatars.ScriptableObjects;
 
 namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
@@ -18,8 +19,10 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
         internal int IntCount;
         internal int EffectiveChannelCount;
         internal int MaxUsefulChannelCount;
+        internal int FloatChannelCount => Math.Min(EffectiveChannelCount, FloatCount);
+        internal int IntChannelCount => Math.Min(EffectiveChannelCount, IntCount);
         internal int OriginalBits => Targets.Count * 8;
-        internal int CompressedBits => Targets.Count == 0 ? 0 : 8 + Math.Min(EffectiveChannelCount, FloatCount) * 8 + Math.Min(EffectiveChannelCount, IntCount) * 8;
+        internal int CompressedBits => Targets.Count == 0 ? 0 : 8 + (FloatChannelCount + IntChannelCount) * 8;
         internal int SavedBits => OriginalBits - CompressedBits;
         internal float CycleSeconds => Batches.Count == 1 ? CompressionConstants.BatchHoldSeconds * 2f : Batches.Count * CompressionConstants.BatchHoldSeconds;
         internal bool IsUseful => Targets.Count > 0 && SavedBits > 0 && Batches.Count <= CompressionConstants.MaximumBatchIndex;
@@ -29,8 +32,7 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             var plan = new CompressionPlan();
             foreach (var p in scanned)
             {
-                if (!p.NetworkSynced || p.Type == VRCExpressionParameters.ValueType.Bool ||
-                    ParameterExclusionRules.IsAutomaticallyExcluded(p.Name, excluded)) continue;
+                if (ParameterExclusionRules.GetExclusion(p, excluded) != null) continue;
                 plan.Targets.Add(p);
                 if (p.Type == VRCExpressionParameters.ValueType.Float) plan.FloatCount++;
                 else if (p.Type == VRCExpressionParameters.ValueType.Int) plan.IntCount++;
@@ -40,6 +42,22 @@ namespace Akiiray.VRCAvatarLiteKitPlus.Editor.ParameterCompression
             AddBatches(plan, VRCExpressionParameters.ValueType.Float);
             AddBatches(plan, VRCExpressionParameters.ValueType.Int);
             return plan;
+        }
+
+        internal IEnumerable<(string Name, AnimatorControllerParameterType Type)> GetRequiredAnimatorParameters()
+        {
+            yield return ("IsLocal", AnimatorControllerParameterType.Bool);
+            foreach (var parameter in Targets)
+                yield return (parameter.Name, CompressionValidation.ToAnimatorType(parameter.Type));
+        }
+
+        internal IEnumerable<(string Name, VRCExpressionParameters.ValueType Type)> GetSyncParameters()
+        {
+            yield return (CompressionConstants.IndexParameter, VRCExpressionParameters.ValueType.Int);
+            for (var i = 0; i < FloatChannelCount; i++)
+                yield return (CompressionConstants.FloatChannelPrefix + i, VRCExpressionParameters.ValueType.Float);
+            for (var i = 0; i < IntChannelCount; i++)
+                yield return (CompressionConstants.IntChannelPrefix + i, VRCExpressionParameters.ValueType.Int);
         }
 
         internal static int FindMaxUsefulK(int floatCount, int intCount)
