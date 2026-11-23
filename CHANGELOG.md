@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0] - 開発中（正式版未公開）
+
+### Added
+
+- Parameter CompressorのInspectorに、同期bit数、削減量、圧縮対象、除外理由、生成予定と共通Validationのエラー表示を整備しました。
+
+### Changed
+
+- 予約Parameter名・Animator Layer名・型不一致・重複・タイミングパス・同期予算を生成前に検証し、衝突時は既存設定を上書きせずビルドを停止するようにしました。
+- NDMF Build clone上の複製・生成物の保存後にDescriptor参照を差し替え、元Assetを保護する処理を強化しました。
+- Contactや非標準の同期ビット幅等の除外判定を改善しました。
+
+### Validation
+
+- Unity 2022.3.22f1 / VRChat SDK 3.10.6 / NDMF 1.15.1で、NDMF AvatarProcessorの21ケースとSDK Builderの4ケースを検証しました。
+- VRChat実機のクライアント間同期、クロスプラットフォーム互換性、VRCFury等との併用、依存下限Versionでのビルドは未検証です（Issue #16）。
+
+> これは次期正式版の開発履歴です。0.3.0のStable ReleaseとVPMへの公開はまだ行っていません。Preview版は配布時に0.3.0-preview.Nとして生成する方針です。
+
 ## [0.2.0] - 2026-08-24
 
 ### Added
